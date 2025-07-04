@@ -14,7 +14,10 @@
 VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY TYY FRFPSYR IZ HRYD GYTYPV HPDR XYGXRYX ESGTXYRTYB GRFPHX HTPH TUSPR HRYRX TYY ABRY BYBRYA TBX HRYXBRX TBB ARA FYFHR YTY HBYLBRY HPDR OKYHRXYB TYY AK FRFYARF CR HRY JPYLYX DRUL HRY RGSRXRYT YP HRY OYKSRYFR HTPH VRYSRIR TST LPHJ YP OYKSRYFR BUICRYX FXH XKYARFHRX TST SPOYSAXYH AR XJYH LRYAXJTBYX TST PGYTYASXARX FXH SPIYHRX AR XJYH DRUL TX HTPH DIRB XTTY BBRU UBHX NIIBAHP HP YRRFR HRYDA IXHRX ARD HRYLBRRX
   </textarea><br>
 
-  <label>試行回数: <input type="number" id="maxTries" value="1000"></label><br>
+  <label>
+  試行回数（最大5000）:
+  <input type="number" id="maxTries" value="1000" max="5000">
+</label><br>
   <button onclick="startClimb()">スタート</button>
 
   <h2>🔑 鍵の対応表</h2>
@@ -27,6 +30,10 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
   <textarea id="decryptedText" rows="6" style="width:100%; font-family:monospace;"></textarea>
   <button onclick="copyResult()">コピー</button>
 
+<h2>⏳ 進行状況</h2>
+<progress id="progressBar" value="0" max="100" style="width: 100%; height: 20px;"></progress>
+
+
   <h2>📈 スコアの推移</h2>
   <canvas id="scoreChart" height="100"></canvas>
 
@@ -36,6 +43,7 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
     </div>
   </footer>
 
-  <script src="cipherclimb.js"></script>
+  <script src="bigramScores.js"></script>
+  <script src="cipherclimb_async.js"></script>
 </body>
 </html>

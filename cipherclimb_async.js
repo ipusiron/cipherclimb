@@ -1,4 +1,5 @@
-// bigramScores は外部ファイル（bigramScores.js）で定義されていることが前提
+
+// bigramScores は外部ファイルで定義されていることが前提
 
 function scoreText(text) {
   let score = 0;
@@ -70,10 +71,10 @@ function renderChart(scores) {
   });
 }
 
-function startClimb() {
+async function startClimb() {
   const cipherText = document.getElementById("cipherText").value.toUpperCase();
   const maxTriesRaw = parseInt(document.getElementById("maxTries").value);
-  const maxTries = Math.min(maxTriesRaw, 5000); // 上限5000
+  const maxTries = Math.min(maxTriesRaw, 5000);
   if (maxTriesRaw > 5000) {
     alert("試行回数の上限は5000回です。5000回に制限されました。");
   }
@@ -107,9 +108,12 @@ function startClimb() {
       }
       scoreHistory.push(bestScore);
 
-      // プログレスバーを更新
       progress++;
       progressBar.value = progress;
+
+      if (i % 250 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0)); // UI更新
+      }
     }
 
     if (bestScore > globalBestScore) {
@@ -120,17 +124,13 @@ function startClimb() {
     }
   }
 
-  // 表示処理
   let keyLine1 = "Plain : " + alphabet.split('').join(' ') + "\n";
   let keyLine2 = "Cipher: " + globalBestKey.split('').join(' ');
   document.getElementById("keyTable").textContent = keyLine1 + keyLine2;
-
   document.getElementById("scoreDisplay").textContent = `スコア: ${globalBestScore.toFixed(2)}`;
   document.getElementById("decryptedText").value = globalBestPlain;
-
   renderChart(globalBestHistory);
-
-  progressBar.value = progressBar.max; // 最後に100%で止める
+  progressBar.value = progressBar.max;
 }
 
 function copyResult() {
