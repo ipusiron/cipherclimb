@@ -52,3 +52,17 @@ footer.app-footer a {
 footer.app-footer a:hover {
   text-decoration: underline;
 }
+
+
+.highlight-box {
+  white-space: pre-wrap;
+  background: #fefefe;
+  border: 1px solid #ccc;
+  padding: 1em;
+  font-family: monospace;
+}
+
+.highlight-word {
+  background-color: yellow;
+  font-weight: bold;
+}

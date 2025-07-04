@@ -169,15 +169,42 @@ async function startClimb() {
   const keyLine2 = "Cipher: " + globalBestKey.split('').join(' ');
   document.getElementById("keyTable").textContent = keyLine1 + keyLine2;
   document.getElementById("scoreDisplay").textContent = `スコア: ${globalBestScore.toFixed(2)}`;
-  document.getElementById("decryptedText").value = globalBestPlain;
+
+  // 復号結果をハイライト表示（辞書読み込みがなければ素のまま）
+  let highlighted;
+  try {
+    highlighted = highlightWords(globalBestPlain);
+  } catch (e) {
+    highlighted = globalBestPlain.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  document.getElementById("highlightedText").innerHTML = highlighted;
+
   renderChart(globalBestHistory);
   progressBar.value = totalSteps;
   statusArea.textContent += "\n✅ 解読完了（焼きなまし×複数回）";
 }
 
 function copyResult() {
-  const textArea = document.getElementById("decryptedText");
-  textArea.select();
+  const temp = document.createElement("textarea");
+  temp.value = document.getElementById("highlightedText").innerText;
+  document.body.appendChild(temp);
+  temp.select();
   document.execCommand("copy");
+  document.body.removeChild(temp);
   alert("解読結果をコピーしました！");
+}
+
+
+function highlightWords(text) {
+  if (typeof englishWords === "undefined") return text; // 読み込み失敗時はそのまま
+
+  const words = text.split(/\\b/);  // 単語境界で分割
+  return words.map(w => {
+    const plain = w.replace(/[^A-Z]/gi, '').toUpperCase();
+    if (plain.length >= 3 && englishWords.has(plain)) {
+      return `<span class="highlight-word">${w}</span>`;
+    } else {
+      return w;
+    }
+  }).join('');
 }
