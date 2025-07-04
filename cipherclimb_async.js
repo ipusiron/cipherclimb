@@ -1,16 +1,23 @@
 
-// bigramScores は外部ファイルで定義されていることが前提
+// bigramScores と trigramScores は外部ファイルで定義されていることが前提
 
 function scoreText(text) {
-  let score = 0;
+  let bigramScore = 0;
+  let trigramScore = 0;
   const upper = text.toUpperCase().replace(/[^A-Z]/g, '');
   for (let i = 0; i < upper.length - 1; i++) {
     const bigram = upper.slice(i, i + 2);
     if (bigram in bigramScores) {
-      score += bigramScores[bigram];
+      bigramScore += bigramScores[bigram];
     }
   }
-  return score;
+  for (let i = 0; i < upper.length - 2; i++) {
+    const trigram = upper.slice(i, i + 3);
+    if (trigram in trigramScores) {
+      trigramScore += trigramScores[trigram];
+    }
+  }
+  return bigramScore + trigramScore * 2;
 }
 
 function decrypt(text, key) {
@@ -80,12 +87,13 @@ async function startClimb() {
   }
 
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const repeatCount = 10;
-
   const progressBar = document.getElementById("progressBar");
   const statusArea = document.getElementById("statusArea");
   progressBar.value = 0;
-  progressBar.max = repeatCount * maxTries;
+
+  const repeatCount = 5;
+  const totalSteps = repeatCount * maxTries;
+  progressBar.max = totalSteps;
 
   let globalBestScore = -Infinity;
   let globalBestKey = '';
@@ -95,27 +103,42 @@ async function startClimb() {
   let progress = 0;
 
   for (let r = 0; r < repeatCount; r++) {
-    let key = shuffleKey(alphabet);
-    let bestKey = key;
-    let bestScore = scoreText(decrypt(cipherText, bestKey));
-    const scoreHistory = [bestScore];
+    let currentKey = shuffleKey(alphabet);
+    let currentScore = scoreText(decrypt(cipherText, currentKey));
+    let bestKey = currentKey;
+    let bestScore = currentScore;
+    const scoreHistory = [currentScore];
+
+    let T = 10.0;
+    const Tmin = 0.01;
+    const coolingRate = Math.pow(Tmin / T, 1 / maxTries);
 
     for (let i = 0; i < maxTries; i++) {
-      let newKey = swapTwo(bestKey);
-      let newScore = scoreText(decrypt(cipherText, newKey));
-      if (newScore > bestScore) {
-        bestKey = newKey;
-        bestScore = newScore;
+      const newKey = swapTwo(currentKey);
+      const newScore = scoreText(decrypt(cipherText, newKey));
+      const delta = newScore - currentScore;
+
+      if (delta > 0 || Math.exp(delta / T) > Math.random()) {
+        currentKey = newKey;
+        currentScore = newScore;
       }
+
+      if (currentScore > bestScore) {
+        bestKey = currentKey;
+        bestScore = currentScore;
+      }
+
+      T *= coolingRate;
       scoreHistory.push(bestScore);
       progress++;
       progressBar.value = progress;
 
       if (i % 250 === 0) {
         statusArea.textContent =
-          `▶ ヒルクライム ${r + 1} / ${repeatCount}\n` +
-          `試行 ${i + 1} / ${maxTries}\n` +
-          `現在のスコア: ${bestScore.toFixed(2)}\n` +
+          `🔥 焼きなまし ${r + 1} / ${repeatCount} | 試行 ${i + 1} / ${maxTries}
+` +
+          `現在スコア: ${currentScore.toFixed(2)} | ベスト: ${bestScore.toFixed(2)}
+` +
           `鍵: ${bestKey.split('').join(' ')}`;
         await new Promise(resolve => setTimeout(resolve, 0));
       }
@@ -129,14 +152,14 @@ async function startClimb() {
     }
   }
 
-  let keyLine1 = "Plain : " + alphabet.split('').join(' ') + "\n";
-  let keyLine2 = "Cipher: " + globalBestKey.split('').join(' ');
+  const keyLine1 = "Plain : " + alphabet.split('').join(' ') + "\n";
+  const keyLine2 = "Cipher: " + globalBestKey.split('').join(' ');
   document.getElementById("keyTable").textContent = keyLine1 + keyLine2;
   document.getElementById("scoreDisplay").textContent = `スコア: ${globalBestScore.toFixed(2)}`;
   document.getElementById("decryptedText").value = globalBestPlain;
   renderChart(globalBestHistory);
-  progressBar.value = progressBar.max;
-  statusArea.textContent += "\n✅ 解読完了！";
+  progressBar.value = totalSteps;
+  statusArea.textContent += "\n✅ 解読完了（焼きなまし×複数回）";
 }
 
 function copyResult() {
