@@ -83,6 +83,7 @@ async function startClimb() {
   const repeatCount = 10;
 
   const progressBar = document.getElementById("progressBar");
+  const statusArea = document.getElementById("statusArea");
   progressBar.value = 0;
   progressBar.max = repeatCount * maxTries;
 
@@ -107,12 +108,16 @@ async function startClimb() {
         bestScore = newScore;
       }
       scoreHistory.push(bestScore);
-
       progress++;
       progressBar.value = progress;
 
       if (i % 250 === 0) {
-        await new Promise(resolve => setTimeout(resolve, 0)); // UI更新
+        statusArea.textContent =
+          `▶ ヒルクライム ${r + 1} / ${repeatCount}\n` +
+          `試行 ${i + 1} / ${maxTries}\n` +
+          `現在のスコア: ${bestScore.toFixed(2)}\n` +
+          `鍵: ${bestKey.split('').join(' ')}`;
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
     }
 
@@ -131,6 +136,7 @@ async function startClimb() {
   document.getElementById("decryptedText").value = globalBestPlain;
   renderChart(globalBestHistory);
   progressBar.value = progressBar.max;
+  statusArea.textContent += "\n✅ 解読完了！";
 }
 
 function copyResult() {
