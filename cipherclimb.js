@@ -170,14 +170,17 @@ async function startClimb() {
   document.getElementById("keyTable").textContent = keyLine1 + keyLine2;
   document.getElementById("scoreDisplay").textContent = `スコア: ${globalBestScore.toFixed(2)}`;
 
-  // 復号結果をハイライト表示（辞書読み込みがなければ素のまま）
+  // ハイライトと単語数表示
   let highlighted;
   try {
     highlighted = highlightWords(globalBestPlain);
   } catch (e) {
-    highlighted = globalBestPlain.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    highlighted = { html: globalBestPlain.replace(/</g, "&lt;").replace(/>/g, "&gt;"), count: 0 };
   }
-  document.getElementById("highlightedText").innerHTML = highlighted;
+
+  document.getElementById("highlightedText").innerHTML = highlighted.html;
+  document.getElementById("highlightCount").textContent =
+    `🔍 ${highlighted.count} 個の英単語がハイライトされました`;
 
   renderChart(globalBestHistory);
   progressBar.value = totalSteps;
@@ -194,17 +197,19 @@ function copyResult() {
   alert("解読結果をコピーしました！");
 }
 
-
 function highlightWords(text) {
-  if (typeof englishWords === "undefined") return text; // 読み込み失敗時はそのまま
+  if (typeof englishWords === "undefined") return { html: text, count: 0 };
 
-  const words = text.split(/\\b/);  // 単語境界で分割
-  return words.map(w => {
+  const words = text.split(/\b/);  // 単語境界で分割
+  let count = 0;
+  const result = words.map(w => {
     const plain = w.replace(/[^A-Z]/gi, '').toUpperCase();
     if (plain.length >= 3 && englishWords.has(plain)) {
+      count++;
       return `<span class="highlight-word">${w}</span>`;
     } else {
       return w;
     }
   }).join('');
+  return { html: result, count };
 }
