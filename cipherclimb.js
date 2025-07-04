@@ -109,7 +109,7 @@ async function startClimb() {
 
   for (let r = 0; r < repeatCount; r++) {
     if (cancelRequested) {
-      statusArea.textContent += "\\n🛑 処理はキャンセルされました";
+      statusArea.textContent += "\n🛑 処理はキャンセルされました";
       return;
     }
 
@@ -125,7 +125,7 @@ async function startClimb() {
 
     for (let i = 0; i < maxTries; i++) {
       if (cancelRequested) {
-        statusArea.textContent += "\\n🛑 処理はキャンセルされました";
+        statusArea.textContent += "\n🛑 処理はキャンセルされました";
         return;
       }
 
@@ -165,14 +165,14 @@ async function startClimb() {
     }
   }
 
-  const keyLine1 = "Plain : " + alphabet.split('').join(' ') + "\\n";
+  const keyLine1 = "Plain : " + alphabet.split('').join(' ') + "\n";
   const keyLine2 = "Cipher: " + globalBestKey.split('').join(' ');
   document.getElementById("keyTable").textContent = keyLine1 + keyLine2;
   document.getElementById("scoreDisplay").textContent = `スコア: ${globalBestScore.toFixed(2)}`;
   document.getElementById("decryptedText").value = globalBestPlain;
   renderChart(globalBestHistory);
   progressBar.value = totalSteps;
-  statusArea.textContent += "\\n✅ 解読完了（焼きなまし×複数回）";
+  statusArea.textContent += "\n✅ 解読完了（焼きなまし×複数回）";
 }
 
 function copyResult() {
