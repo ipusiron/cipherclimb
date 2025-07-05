@@ -171,14 +171,8 @@ WE HOLD THESE TRUTHS TO BE SELF EVIDENT THAT ALL MEN ARE CREATED EQUAL THAT THEY
   </div>
 
   <!-- モジュール読み込み -->
+   <script type="module" src="main.js"></script>
   <script type="module">
-    import { startClimb, cancelClimb, showHelp, hideHelp, copyResult, setSampleFixedKey } from './main.js';
-    window.startClimb = startClimb;
-    window.cancelClimb = cancelClimb;
-    window.showHelp = showHelp;
-    window.hideHelp = hideHelp;
-    window.copyResult = copyResult;
-	window.setSampleFixedKey = setSampleFixedKey;
 
     function applyTheme() {
       const mode = localStorage.getItem("theme");

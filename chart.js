@@ -56,9 +56,10 @@ export function initChart() {
 }
 
 // スコアを1件追加する（毎回呼ぶ）
-export function addScore(score, stepNumber) {
+export function addScore(value) {
   if (!scoreChart) return;
-  scoreChart.data.labels.push(stepNumber); // ← 明示的に渡されたステップ数を使う
-  scoreChart.data.datasets[0].data.push(score);
-  scoreChart.update('none');
+  const nextIndex = scoreChart.data.labels.length + 1;
+  scoreChart.data.labels.push(nextIndex);
+  scoreChart.data.datasets[0].data.push(value);
+  scoreChart.update('none'); // アニメーションなしで即時更新
 }
