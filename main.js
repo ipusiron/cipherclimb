@@ -102,6 +102,12 @@ function setSampleFixedKey() {
 }
 
 async function startClimb() {
+  // ✅ まず固定鍵に矛盾があるかチェック
+  if (document.querySelectorAll(".fixed-key-ui select.duplicate").length > 0) {
+    alert("❌ 固定鍵に重複があります。同じ暗号文字が複数割り当てられています。これは単一換字式暗号では許容されません。");
+    return;
+  }
+
   cancelRequested = false; //
 
   const cipherText = document.getElementById("cipherText").value.toUpperCase();
