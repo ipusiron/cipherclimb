@@ -103,7 +103,7 @@ function setSampleFixedKey() {
 
 async function startClimb() {
   cancelRequested = false; //
-  
+
   const cipherText = document.getElementById("cipherText").value.toUpperCase();
   const maxTriesRaw = parseInt(document.getElementById("maxTries").value);
   const maxTries = Math.min(maxTriesRaw, 5000);
@@ -132,9 +132,13 @@ async function startClimb() {
   let globalBestPlain = '';
   let progress = 0;
 
-  const fixedIndices = new Set(
-    Object.keys(fixedMap).map(c => c.charCodeAt(0) - 65)
-  );
+ // decryptKey のインデックス位置にマッチさせる
+const fixedIndices = new Set();
+for (const [plain, cipher] of Object.entries(fixedMap)) {
+  const cipherIdx = cipher.charCodeAt(0) - 65;
+  fixedIndices.add(cipherIdx); // decryptKey[暗号文字] = 平文文字
+}
+
 
   for (let r = 0; r < repeatCount; r++) {
     let currentKey = generateDecryptKeyFromFixedMap(fixedMap);
