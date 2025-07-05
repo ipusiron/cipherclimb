@@ -66,9 +66,12 @@ export async function startClimb() {
     let bestScore = currentScore;
     const scoreHistory = [currentScore];
 
+    // let T = 10.0;
+    // const Tmin = 0.01;
+    // const coolingRate = Math.pow(Tmin / T, 1 / maxTries);
+    
     let T = 10.0;
-    const Tmin = 0.01;
-    const coolingRate = Math.pow(Tmin / T, 1 / maxTries);
+    const coolingRate = 0.9995; // ← 非常に緩やかに冷却
 
     for (let i = 0; i < maxTries; i++) {
       if (cancelRequested) {

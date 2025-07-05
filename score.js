@@ -47,14 +47,24 @@ export function ngramScore(text) {
 
 export function dictionaryMatchScore(text) {
   if (typeof englishWords === "undefined") return 0;
+
   const words = text.split(/\b/);
   let count = 0;
+
   for (let w of words) {
     const plain = w.replace(/[^A-Z]/gi, '').toLowerCase();
-    if (plain.length >= 3 && englishWords.has(plain)) {
-      count++;
+    if (plain.length >= 3) {
+      for (let dictWord of englishWords) {
+        if (plain.startsWith(dictWord)) {
+          count += 1;  // 部分一致の加点（小さめでOK）
+          break;
+        }
+      }
     }
   }
+
   const weight = parseInt(document.getElementById("dictWeight")?.value || "100");
   return count * weight;
 }
+
+
