@@ -229,3 +229,45 @@ body.dark-mode .modal-content {
   font-style: italic;
   color: #888;
 }
+
+/* 固定鍵のスタイル */
+.fixed-key-ui .row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 0.6em;
+}
+
+.fixed-key-ui span,
+.fixed-key-ui select {
+  width: 2.6em;
+  height: 2.2em;
+  text-align: center;
+  font-size: 1.1em;
+  font-family: monospace;
+  box-sizing: border-box;
+}
+
+.fixed-key-ui select.duplicate {
+  background-color: #ffdddd;
+  border: 2px solid red;
+}
+
+.keytable {
+  font-family: monospace;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.keytable .fixed {
+  color: #0077cc;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.duplicate {
+  background-color: #ffdddd;
+  border: 2px solid red;
+}
+
