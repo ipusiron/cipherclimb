@@ -11,8 +11,7 @@ textarea {
   width: 100%;
   font-family: monospace;
   padding: 0.5em;
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+  margin: 0.5em 0;
 }
 
 pre {
@@ -35,25 +34,6 @@ canvas {
   border: 1px solid #ccc;
 }
 
-footer.app-footer {
-  margin-top: 3em;
-  padding-top: 1em;
-  border-top: 1px solid #ccc;
-  font-size: 0.9em;
-  color: #555;
-  text-align: center;
-}
-
-footer.app-footer a {
-  color: #0066cc;
-  text-decoration: none;
-}
-
-footer.app-footer a:hover {
-  text-decoration: underline;
-}
-
-
 .highlight-box {
   white-space: pre-wrap;
   background: #fefefe;
@@ -65,4 +45,55 @@ footer.app-footer a:hover {
 .highlight-word {
   background-color: yellow;
   font-weight: bold;
+}
+
+footer.app-footer {
+  margin-top: 3em;
+  padding-top: 1em;
+  border-top: 1px solid #ccc;
+  font-size: 0.9em;
+  text-align: center;
+}
+
+/* 手動ダークモード */
+body.dark-mode {
+  background-color: #121212;
+  color: #eee;
+}
+
+body.dark-mode .highlight-box,
+body.dark-mode textarea,
+body.dark-mode pre {
+  background-color: #1e1e1e;
+  color: #ccc;
+}
+
+body.dark-mode button {
+  background-color: #333;
+  color: #fff;
+}
+
+/* モーダル */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 10;
+  left: 0; top: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background: white;
+  margin: 10% auto;
+  padding: 20px;
+  width: 80%;
+  max-width: 600px;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  top: 10px; right: 20px;
+  font-size: 24px;
+  cursor: pointer;
 }

@@ -1,45 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Cipher Climb</title>
+  <title>サイファー・クライム（Cipher Climb）</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="englishWords.js"></script>
+  <script src="bigramScores.js"></script>
+  <script src="trigramScores.js"></script>
 </head>
 <body>
-  <h1>🧗 Cipher Climb</h1>
-  <p>ヒルクライミング法で換字式暗号を解読してみよう！</p>
+  <button id="toggleTheme" style="float:right;">🌙 ダークモード</button>
 
+  <h1>🧗 サイファー・クライム（Cipher Climb）</h1>
+  <p>このツールは<strong>単一換字式暗号の解読専用</strong>です。<br>
+  多表式（例：ヴィジュネル暗号）には対応していません。</p>
+
+  <button onclick="showHelp()">❔ ヘルプ</button>
+
+  <h2>🔐 暗号文の入力</h2>
   <textarea id="cipherText" rows="6" style="width:100%;">
 VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY TYY FRFPSYR IZ HRYD GYTYPV HPDR XYGXRYX ESGTXYRTYB GRFPHX HTPH TUSPR HRYRX TYY ABRY BYBRYA TBX HRYXBRX TBB ARA FYFHR YTY HBYLBRY HPDR OKYHRXYB TYY AK FRFYARF CR HRY JPYLYX DRUL HRY RGSRXRYT YP HRY OYKSRYFR HTPH VRYSRIR TST LPHJ YP OYKSRYFR BUICRYX FXH XKYARFHRX TST SPOYSAXYH AR XJYH LRYAXJTBYX TST PGYTYASXARX FXH SPIYHRX AR XJYH DRUL TX HTPH DIRB XTTY BBRU UBHX NIIBAHP HP YRRFR HRYDA IXHRX ARD HRYLBRRX
   </textarea><br>
 
-  <label>
-  試行回数（最大5000）:
-  <input type="number" id="maxTries" value="1000" max="5000">
-</label><br>
+  <label>試行回数（最大5000）:
+    <input type="number" id="maxTries" value="1000" max="5000">
+  </label><br>
   <button onclick="startClimb()">スタート</button>
   <button onclick="cancelClimb()">停止</button>
 
-<h2>🔄 解読中の情報</h2>
-<div id="statusArea" style="font-family:monospace; background:#f0f0f0; padding:0.5em; white-space:pre-wrap;">
-（ステータスがここに表示されます）
-</div>
+  <h2>⚙️ スコア設定</h2>
+  <label><input type="checkbox" id="score_letter" checked> 文字頻度</label><br>
+  <label><input type="checkbox" id="score_ngram" checked> N-gram（bigram/trigram）</label><br>
+  <label><input type="checkbox" id="score_dict" checked> 英単語辞書マッチ</label>
+
+  <h2>🔄 解読中の情報</h2>
+  <div id="statusArea" class="highlight-box">(ステータス表示)</div>
 
   <h2>🔑 鍵の対応表</h2>
   <pre id="keyTable">（ここに鍵が表示されます）</pre>
 
   <h2>📊 スコア</h2>
   <div id="scoreDisplay">スコア: -</div>
-  
-<h2>📝 解読結果</h2>
-<div id="highlightedText" class="highlight-box"></div>
-<div id="highlightCount" style="margin-top:0.5em; font-size:0.9em; color:#444;"></div>
-<button onclick="copyResult()">コピー</button>
 
-<h2>⏳ 進行状況</h2>
-<progress id="progressBar" value="0" max="100" style="width: 100%; height: 20px;"></progress>
+  <h2>📝 解読結果</h2>
+  <div id="highlightedText" class="highlight-box"></div>
+  <div id="highlightCount" style="margin-top:0.5em; font-size:0.9em; color:#444;"></div>
+  <button onclick="copyResult()">コピー</button>
 
+  <h2>⏳ 進行状況</h2>
+  <progress id="progressBar" value="0" max="100" style="width: 100%; height: 20px;"></progress>
 
   <h2>📈 スコアの推移</h2>
   <canvas id="scoreChart" height="100"></canvas>
@@ -50,9 +61,52 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
     </div>
   </footer>
 
-  <script src="bigramScores.js"></script>
-  <script src="trigramScores.js"></script>
-  <script src="englishWords.js"></script>
-  <script src="cipherclimb.js"></script>
+  <!-- ヘルプモーダル -->
+  <div id="helpModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="hideHelp()">&times;</span>
+      <h2>❔ ヘルプ：サイファー・クライムとは？</h2>
+      <p>このツールは、単一換字式暗号を焼きなまし法で解読する教育ツールです。</p>
+      <ul>
+        <li>スコア要素のON/OFFでアルゴリズムの効果を比較できます</li>
+        <li>英単語をハイライト表示して復号の進展が見える化されます</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- モジュール読み込み -->
+  <script type="module">
+    import { startClimb, cancelClimb, showHelp, hideHelp, copyResult } from './main.js';
+
+    // グローバルに公開
+    window.startClimb = startClimb;
+    window.cancelClimb = cancelClimb;
+    window.showHelp = showHelp;
+    window.hideHelp = hideHelp;
+    window.copyResult = copyResult;
+
+    // テーマ切り替え処理
+    function applyTheme() {
+      const mode = localStorage.getItem("theme");
+      const body = document.body;
+      const btn = document.getElementById("toggleTheme");
+      if (mode === "dark") {
+        body.classList.add("dark-mode");
+        btn.textContent = "☀️ ライトモード";
+      } else {
+        body.classList.remove("dark-mode");
+        btn.textContent = "🌙 ダークモード";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      applyTheme();
+      document.getElementById("toggleTheme").addEventListener("click", () => {
+        const isDark = document.body.classList.toggle("dark-mode");
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+        applyTheme();
+      });
+    });
+  </script>
 </body>
 </html>

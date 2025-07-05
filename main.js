@@ -1,87 +1,33 @@
+
+import { decrypt, shuffleKey, swapTwo, highlightWords } from './utils.js';
+import { scoreText } from './score.js';
+import { renderChart } from './chart.js';
+
 let cancelRequested = false;
 
-function cancelClimb() {
+export function cancelClimb() {
   cancelRequested = true;
 }
 
-function scoreText(text) {
-  let bigramScore = 0;
-  let trigramScore = 0;
-  const upper = text.toUpperCase().replace(/[^A-Z]/g, '');
-  for (let i = 0; i < upper.length - 1; i++) {
-    const bigram = upper.slice(i, i + 2);
-    if (bigram in bigramScores) {
-      bigramScore += bigramScores[bigram];
-    }
-  }
-  for (let i = 0; i < upper.length - 2; i++) {
-    const trigram = upper.slice(i, i + 3);
-    if (trigram in trigramScores) {
-      trigramScore += trigramScores[trigram];
-    }
-  }
-  return bigramScore + trigramScore * 2;
+export function showHelp() {
+  document.getElementById("helpModal").style.display = "block";
 }
 
-function decrypt(text, key) {
-  let result = '';
-  for (let c of text.toUpperCase()) {
-    if (c >= 'A' && c <= 'Z') {
-      const index = c.charCodeAt(0) - 65;
-      result += key[index];
-    } else {
-      result += c;
-    }
-  }
-  return result;
+export function hideHelp() {
+  document.getElementById("helpModal").style.display = "none";
 }
 
-function shuffleKey(key) {
-  const arr = key.split('');
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr.join('');
+export function copyResult() {
+  const temp = document.createElement("textarea");
+  temp.value = document.getElementById("highlightedText").innerText;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand("copy");
+  document.body.removeChild(temp);
+  alert("解読結果をコピーしました！");
 }
 
-function swapTwo(str) {
-  let a = Math.floor(Math.random() * str.length);
-  let b = Math.floor(Math.random() * str.length);
-  if (a === b) b = (b + 1) % str.length;
-  let arr = str.split('');
-  [arr[a], arr[b]] = [arr[b], arr[a]];
-  return arr.join('');
-}
-
-let scoreChart = null;
-
-function renderChart(scores) {
-  const ctx = document.getElementById('scoreChart').getContext('2d');
-  if (scoreChart) scoreChart.destroy();
-  scoreChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: scores.map((_, i) => i + 1),
-      datasets: [{
-        label: 'スコア',
-        data: scores,
-        fill: false,
-        borderColor: 'blue',
-        tension: 0.1
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        x: { title: { display: true, text: '試行回数' }},
-        y: { title: { display: true, text: 'スコア' }}
-      }
-    }
-  });
-}
-
-async function startClimb() {
+export async function startClimb() {
   cancelRequested = false;
 
   const cipherText = document.getElementById("cipherText").value.toUpperCase();
@@ -170,14 +116,7 @@ async function startClimb() {
   document.getElementById("keyTable").textContent = keyLine1 + keyLine2;
   document.getElementById("scoreDisplay").textContent = `スコア: ${globalBestScore.toFixed(2)}`;
 
-  // ハイライトと単語数表示
-  let highlighted;
-  try {
-    highlighted = highlightWords(globalBestPlain);
-  } catch (e) {
-    highlighted = { html: globalBestPlain.replace(/</g, "&lt;").replace(/>/g, "&gt;"), count: 0 };
-  }
-
+  let highlighted = highlightWords(globalBestPlain);
   document.getElementById("highlightedText").innerHTML = highlighted.html;
   document.getElementById("highlightCount").textContent =
     `🔍 ${highlighted.count} 個の英単語がハイライトされました`;
@@ -185,31 +124,4 @@ async function startClimb() {
   renderChart(globalBestHistory);
   progressBar.value = totalSteps;
   statusArea.textContent += "\n✅ 解読完了（焼きなまし×複数回）";
-}
-
-function copyResult() {
-  const temp = document.createElement("textarea");
-  temp.value = document.getElementById("highlightedText").innerText;
-  document.body.appendChild(temp);
-  temp.select();
-  document.execCommand("copy");
-  document.body.removeChild(temp);
-  alert("解読結果をコピーしました！");
-}
-
-function highlightWords(text) {
-  if (typeof englishWords === "undefined") return { html: text, count: 0 };
-
-  const words = text.split(/\b/);  // 単語境界で分割
-  let count = 0;
-  const result = words.map(w => {
-    const plain = w.replace(/[^A-Z]/gi, '').toUpperCase();
-    if (plain.length >= 3 && englishWords.has(plain)) {
-      count++;
-      return `<span class="highlight-word">${w}</span>`;
-    } else {
-      return w;
-    }
-  }).join('');
-  return { html: result, count };
 }
