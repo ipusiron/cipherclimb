@@ -55,5 +55,6 @@ export function dictionaryMatchScore(text) {
       count++;
     }
   }
-  return count * 50;
+  const weight = parseInt(document.getElementById("dictWeight")?.value || "100");
+  return count * weight;
 }

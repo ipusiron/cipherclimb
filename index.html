@@ -33,7 +33,14 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
       <h3>⚙️ スコア構成</h3>
       <label><input type="checkbox" id="score_letter" checked> 文字頻度</label><br>
       <label><input type="checkbox" id="score_ngram" checked> N-gram</label><br>
-      <label><input type="checkbox" id="score_dict" checked> 辞書照合</label>
+	  <label><input type="checkbox" id="score_dict" checked> 辞書照合  単語の重み</label>
+<select id="dictWeight" style="margin-left: 0.5em;">
+  <option value="30">30（単語弱め）</option>
+  <option value="50">50</option>
+  <option value="100" selected>100（バランス型）</option>
+  <option value="150">150</option>
+  <option value="200">200（単語を最重視）</option>
+</select>
 
       <div class="controls">
         <label>試行回数（最大5000）:
