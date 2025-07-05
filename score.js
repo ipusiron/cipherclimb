@@ -1,4 +1,3 @@
-// score.js
 export function scoreText(text) {
   const useLetter = document.getElementById("score_letter")?.checked ?? true;
   const useNgram = document.getElementById("score_ngram")?.checked ?? true;
@@ -48,23 +47,28 @@ export function ngramScore(text) {
 export function dictionaryMatchScore(text) {
   if (typeof englishWords === "undefined") return 0;
 
+  const usePartial = document.getElementById("usePartialMatch")?.checked ?? true;
+  const weight = parseInt(document.getElementById("dictWeight")?.value || "100");
+  const lowerDict = new Set([...englishWords].map(w => w.toLowerCase()));
+
   const words = text.split(/\b/);
   let count = 0;
 
   for (let w of words) {
     const plain = w.replace(/[^A-Z]/gi, '').toLowerCase();
     if (plain.length >= 3) {
-      for (let dictWord of englishWords) {
-        if (plain.startsWith(dictWord)) {
-          count += 1;  // 部分一致の加点（小さめでOK）
-          break;
+      if (!usePartial && lowerDict.has(plain)) {
+        count += 1;
+      } else if (usePartial) {
+        for (let dictWord of lowerDict) {
+          if (plain.startsWith(dictWord)) {
+            count += 1;
+            break;
+          }
         }
       }
     }
   }
 
-  const weight = parseInt(document.getElementById("dictWeight")?.value || "100");
   return count * weight;
 }
-
-

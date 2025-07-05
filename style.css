@@ -222,8 +222,10 @@ body.dark-mode .modal-content {
   padding: 0.1em 0.5em;
 }
 
-.big-button {
-  padding: 1em 2em;
-  font-size: 1.2em;
-  border-radius: 6px;
+
+/* 解読中の表示スタイル */
+.processing {
+  opacity: 0.6;
+  font-style: italic;
+  color: #888;
 }

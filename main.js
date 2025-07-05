@@ -97,6 +97,13 @@ export async function startClimb() {
     Object.keys(fixedMap).map((c) => c.charCodeAt(0) - 65)
   );
 
+  // 処理中の表示を初期化
+  document.getElementById("keyTable").textContent = "(鍵の計算中...)";
+  document.getElementById("scoreDisplay").textContent = "スコア: (計算中)";
+  document.getElementById("highlightedText").innerHTML = "<em>解読中です...</em>";
+  document.getElementById("highlightedText").classList.add("processing");
+  document.getElementById("highlightCount").textContent = "";
+
   let T = 10.0;
   const T0 = 10.0;
   const coolingRate =
@@ -157,7 +164,6 @@ export async function startClimb() {
       if (useAnnealing && enableReheat && noImprovementCount >= 500) {
         T = T0;
         noImprovementCount = 0;
-        console.log('♻️ 温度をリセット（局所最適脱出）');
       }
 
       T *= coolingRate;
@@ -165,7 +171,7 @@ export async function startClimb() {
       progressBar.value = progress;
 
       if (i % 100 === 0) {
-        addScore(bestScore, progress); // ← 累積進行回数を渡す
+        addScore(bestScore, progress);
       }
 
       if (i % 250 === 0) {
@@ -193,15 +199,13 @@ export async function startClimb() {
   const keyLine1 = 'Plain : ' + alphabet.split('').join(' ') + '\n';
   const keyLine2 = 'Cipher: ' + globalBestKey.split('').join(' ');
   document.getElementById('keyTable').textContent = keyLine1 + keyLine2;
-  document.getElementById(
-    'scoreDisplay'
-  ).textContent = `スコア: ${globalBestScore.toFixed(2)}`;
+  document.getElementById('scoreDisplay').textContent = `スコア: ${globalBestScore.toFixed(2)}`;
 
   const highlighted = highlightWords(globalBestPlain);
   document.getElementById('highlightedText').innerHTML = highlighted.html;
-  document.getElementById(
-    'highlightCount'
-  ).textContent = `🔍 ${highlighted.count} 個の英単語がハイライトされました`;
+  document.getElementById('highlightedText').classList.remove("processing");
+  document.getElementById('highlightCount').textContent =
+    `🔍 ${highlighted.count} 個の英単語がハイライトされました`;
 
   progressBar.value = totalSteps;
   statusArea.textContent +=

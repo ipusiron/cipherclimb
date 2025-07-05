@@ -27,7 +27,7 @@
 VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRITYR RSFPVRF ZI HDRAY JYRTHPY VAHD JRYHTAS ESTBARSTZBR YAODHX HDTH TUPSO HDRXRTYR BAQR BAZRYHI TSF HDR LEYXEAH PQ DTLLASRXX HDTH HP XRJEYR HDRXR YAODHX OPKRYSURSHX TYR ASXHAHEHRF TUPSO URS FRYAKASO HDRAY CEXH LPVRYX QYPU HDR JPSXRSH PQ HDR OPKRYSRF HDTH VDRSRKRY TSI QPYU PQ OPKRYSURSH ZRJPURX FRXHYEJHAKR PQ HDRXR RSFX AH AX HDR YAODH PQ HDR LRPLBR HP TBHRY PY HP TZPBAXD AH TSF HP ASXHAHEHR SRV OPKRYSURSH BTIASO AHX QPESFTHAPS PS XEJD LYASJALBRX TSF PYOTSAWASO AHX LPVRYX AS XEJD QPYU TX HP HDRU XDTBB XRRU UPXH BANRBI HP RQQRJH HDRAY XTQRHI TSF DTLLASRXX
 	</textarea>
 
-      <h3>🔒 固定鍵マッピング（</h3>
+      <h3>🔒 固定鍵マッピング</h3>
       <input id="fixedMappings" type="text" placeholder="例: V→W,R→E,D→H,P→O,B→L,F→D,H→T,X→S" style="width: 100%;">
 	  <button type="button" onclick="setSampleFixedKey()">🔒 サンプルの固定鍵を入力</button><br>
       <small>確定済みの解読変換を「A→T」（<strong>暗号文</strong>文字→平文文字）のように指定すると、それ以外の文字を解読対象にします。</small>
@@ -45,6 +45,13 @@ VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRI
       </div>
       <label><input type="checkbox" id="enableReheat" checked> スコア停滞時に温度をリセット（局所最適脱出）</label>
 
+      <h3>📚 辞書設定</h3>
+      <label>使用する辞書:</label>
+      <select id="dictSource" class="tall-select">
+        <option value="ngsl1000">NGSL 1000語（教育語彙）</option>
+        <option value="google10000">Google 10000語（頻出語彙）</option>
+      </select>
+
       <h3>⚙️ スコア構成</h3>
       <label><input type="checkbox" id="score_letter" checked> 文字頻度</label><br>
       <label><input type="checkbox" id="score_ngram" checked> N-gram</label><br>
@@ -58,7 +65,7 @@ VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRI
           <option value="200">200（超重視）</option>
         </select>
       </div>
-      <label><input type="checkbox" id="usePartialMatch" checked> 単語を部分一致でも評価する</label>
+      <label><input type="checkbox" id="usePartialMatch"> 単語を部分一致でも評価する</label>
 
       <div class="controls">
         <label>試行回数（最大5000）:
@@ -146,6 +153,22 @@ WE HOLD THESE TRUTHS TO BE SELF EVIDENT THAT ALL MEN ARE CREATED EQUAL THAT THEY
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("dictSource").addEventListener("change", e => {
+      const src = {
+        "1000": "englishWords_google1000.js",
+        "5000": "englishWords_google5000.js",
+        "10000": "englishWords_google10000_true.js"
+      }[e.target.value];
+
+      if (src) {
+        document.querySelectorAll("script[src*='englishWords_']").forEach(s => s.remove());
+        const script = document.createElement("script");
+        script.src = src;
+        document.body.appendChild(script);
+        alert(`辞書を ${e.target.value} 語に切り替えました（次の解読から有効）`);
+      }
+    });
+
     const annealingCheckbox = document.getElementById("useAnnealing");
     annealingCheckbox.addEventListener("change", (e) => {
       const enableReheat = document.getElementById("enableReheat");
