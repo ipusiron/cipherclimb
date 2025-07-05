@@ -24,16 +24,23 @@
 VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY TYY FRFPSYR IZ HRYD GYTYPV HPDR XYGXRYX ESGTXYRTYB GRFPHX HTPH TUSPR HRYRX TYY ABRY BYBRYA TBX HRYXBRX TBB ARA FYFHR YTY HBYLBRY HPDR OKYHRXYB TYY AK FRFYARF CR HRY JPYLYX DRUL HRY RGSRXRYT YP HRY OYKSRYFR HTPH VRYSRIR TST LPHJ YP OYKSRYFR BUICRYX FXH XKYARFHRX TST SPOYSAXYH AR XJYH LRYAXJTBYX TST PGYTYASXARX FXH SPIYHRX AR XJYH DRUL TX HTPH DIRB XTTY BBRU UBHX NIIBAHP HP YRRFR HRYDA IXHRX ARD HRYLBRRX
   </textarea><br>
 
-  <label>試行回数（最大5000）:
-    <input type="number" id="maxTries" value="1000" max="5000">
-  </label><br>
-  <button onclick="startClimb()">スタート</button>
-  <button onclick="cancelClimb()">停止</button>
+  <h2>🧠 アルゴリズム設定</h2>
+<label><input type="checkbox" id="useAnnealing" checked> 焼きなまし法（Simulated Annealing）を使用する</label><br>
 
   <h2>⚙️ スコア設定</h2>
   <label><input type="checkbox" id="score_letter" checked> 文字頻度</label><br>
   <label><input type="checkbox" id="score_ngram" checked> N-gram（bigram/trigram）</label><br>
   <label><input type="checkbox" id="score_dict" checked> 英単語辞書マッチ</label>
+
+  <label>試行回数（最大5000）:
+    <input type="number" id="maxTries" value="1000" max="5000">
+  </label><br>
+  <button onclick="startClimb()">スタート</button>
+  <button onclick="cancelClimb()">停止</button>
+  
+  <h2>⏳ 進行状況</h2>
+  <progress id="progressBar" value="0" max="100" style="width: 100%; height: 20px;"></progress>
+
 
   <h2>🔄 解読中の情報</h2>
   <div id="statusArea" class="highlight-box">(ステータス表示)</div>
@@ -48,9 +55,6 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
   <div id="highlightedText" class="highlight-box"></div>
   <div id="highlightCount" style="margin-top:0.5em; font-size:0.9em; color:#444;"></div>
   <button onclick="copyResult()">コピー</button>
-
-  <h2>⏳ 進行状況</h2>
-  <progress id="progressBar" value="0" max="100" style="width: 100%; height: 20px;"></progress>
 
   <h2>📈 スコアの推移</h2>
   <canvas id="scoreChart" height="100"></canvas>

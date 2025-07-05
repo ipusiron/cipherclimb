@@ -37,6 +37,7 @@ export async function startClimb() {
     alert("試行回数の上限は5000回です。5000回に制限されました。");
   }
 
+  const useAnnealing = document.getElementById("useAnnealing")?.checked ?? true;
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const progressBar = document.getElementById("progressBar");
   const statusArea = document.getElementById("statusArea");
@@ -79,9 +80,18 @@ export async function startClimb() {
       const newScore = scoreText(decrypt(cipherText, newKey));
       const delta = newScore - currentScore;
 
-      if (delta > 0 || Math.exp(delta / T) > Math.random()) {
-        currentKey = newKey;
-        currentScore = newScore;
+      if (useAnnealing) {
+        // 焼きなまし法
+        if (delta > 0 || Math.exp(delta / T) > Math.random()) {
+          currentKey = newKey;
+          currentScore = newScore;
+        }
+      } else {
+        // ヒルクライミング法
+        if (delta > 0) {
+          currentKey = newKey;
+          currentScore = newScore;
+        }
       }
 
       if (currentScore > bestScore) {
@@ -96,7 +106,7 @@ export async function startClimb() {
 
       if (i % 250 === 0) {
         statusArea.textContent =
-          `🔥 焼きなまし ${r + 1} / ${repeatCount} | 試行 ${i + 1} / ${maxTries}\n` +
+          `🔥 ${useAnnealing ? '焼きなまし' : 'ヒルクライミング'} ${r + 1} / ${repeatCount} | 試行 ${i + 1} / ${maxTries}\n` +
           `現在スコア: ${currentScore.toFixed(2)} | ベスト: ${bestScore.toFixed(2)}\n` +
           `鍵: ${bestKey.split('').join(' ')}`;
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -116,12 +126,12 @@ export async function startClimb() {
   document.getElementById("keyTable").textContent = keyLine1 + keyLine2;
   document.getElementById("scoreDisplay").textContent = `スコア: ${globalBestScore.toFixed(2)}`;
 
-  let highlighted = highlightWords(globalBestPlain);
+  const highlighted = highlightWords(globalBestPlain);
   document.getElementById("highlightedText").innerHTML = highlighted.html;
   document.getElementById("highlightCount").textContent =
     `🔍 ${highlighted.count} 個の英単語がハイライトされました`;
 
   renderChart(globalBestHistory);
   progressBar.value = totalSteps;
-  statusArea.textContent += "\n✅ 解読完了（焼きなまし×複数回）";
+  statusArea.textContent += "\n✅ 解読完了（" + (useAnnealing ? '焼きなまし' : 'ヒルクライミング') + "×複数回）";
 }
