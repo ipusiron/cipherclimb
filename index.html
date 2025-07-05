@@ -80,14 +80,14 @@ VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRI
       <h3>🔄 解読中の情報</h3>
       <div id="statusArea" class="highlight-box">(ステータス表示)</div>
 
-      <h3>🔑 鍵の対応表</h3>
-      <pre id="keyTable"></pre>
+      <h3>📈 スコアの推移</h3>
+      <canvas id="scoreChart" height="100"></canvas>
 
       <h3>📊 スコア</h3>
       <div id="scoreDisplay">スコア: -</div>
 
-      <h3>📈 スコアの推移</h3>
-      <canvas id="scoreChart" height="100"></canvas>
+      <h3>🔑 鍵の対応表</h3>
+      <pre id="keyTable"></pre>
 
       <h3>📝 解読結果</h3>
       <div id="highlightedText" class="highlight-box"></div>
@@ -146,6 +146,23 @@ WE HOLD THESE TRUTHS TO BE SELF EVIDENT THAT ALL MEN ARE CREATED EQUAL THAT THEY
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+    const annealingCheckbox = document.getElementById("useAnnealing");
+    annealingCheckbox.addEventListener("change", (e) => {
+      const enableReheat = document.getElementById("enableReheat");
+      const coolingRate = document.getElementById("coolingRateSelect");
+
+      if (e.target.checked) {
+        enableReheat.disabled = false;
+        coolingRate.disabled = false;
+      } else {
+        enableReheat.disabled = true;
+        coolingRate.disabled = true;
+      }
+    });
+
+    // 初期状態に反映
+    annealingCheckbox.dispatchEvent(new Event("change"));
+
       applyTheme();
       document.getElementById("toggleTheme").addEventListener("click", () => {
         const isDark = document.body.classList.toggle("dark-mode");
