@@ -89,7 +89,6 @@ function setSampleFixedKey() {
   const sample = {
     /* 平文: "暗号文" */
     W: "V", E: "R", H: "D", O: "P", L: "B", D: "F", T: "H", S: "X"
-//    V: "W", R: "E", D: "H", P: "O", B: "L", F: "D", H: "T", X: "S"
   };
   for (let i = 0; i < 26; i++) {
     const plain = String.fromCharCode(65 + i);
@@ -99,6 +98,7 @@ function setSampleFixedKey() {
       sel.value = sample[plain] || "";
     }
   }
+  validateFixedKeyConflicts();
 }
 
 async function startClimb() {
@@ -227,9 +227,48 @@ function copyResult() {
   navigator.clipboard.writeText(text).then(() => alert("解読結果をコピーしました！"));
 }
 
+function validateFixedKeyConflicts() {
+  const selected = {};
+  const conflicts = new Set();
+
+  for (let i = 0; i < 26; i++) {
+    const plain = String.fromCharCode(65 + i);
+    const sel = document.getElementById("fixed_" + plain);
+    sel.classList.remove("duplicate");
+    const val = sel.value?.toUpperCase();
+
+    if (val && /^[A-Z]$/.test(val)) {
+      if (selected[val]) {
+        // すでに使われていたら両者に警告
+        conflicts.add(val);
+      } else {
+        selected[val] = plain;
+      }
+    }
+  }
+
+  // 再びループして矛盾のあるselectにclass追加
+  for (let i = 0; i < 26; i++) {
+    const plain = String.fromCharCode(65 + i);
+    const sel = document.getElementById("fixed_" + plain);
+    const val = sel.value?.toUpperCase();
+    if (conflicts.has(val)) {
+      sel.classList.add("duplicate");
+    }
+  }
+}
+
+
 window.startClimb = startClimb;
 window.cancelClimb = cancelClimb;
 window.setSampleFixedKey = setSampleFixedKey;
 window.copyResult = copyResult;
 window.showHelp = showHelp;
 window.hideHelp = hideHelp;
+
+for (let i = 0; i < 26; i++) {
+  const id = `fixed_${String.fromCharCode(65 + i)}`;
+  const sel = document.getElementById(id);
+  sel.addEventListener("input", validateFixedKeyConflicts);
+}
+
