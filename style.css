@@ -266,6 +266,13 @@ body.dark-mode .modal-content {
   text-decoration: underline;
 }
 
+.fixed-key-button {
+  margin-top: 0.6em;
+  margin-bottom: 0.8em;
+}
+
+
+
 .duplicate {
   background-color: #ffdddd;
   border: 2px solid red;
