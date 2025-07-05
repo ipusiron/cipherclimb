@@ -221,3 +221,9 @@ body.dark-mode .modal-content {
   font-size: 1em;
   padding: 0.1em 0.5em;
 }
+
+.big-button {
+  padding: 1em 2em;
+  font-size: 1.2em;
+  border-radius: 6px;
+}

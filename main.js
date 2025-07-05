@@ -1,4 +1,3 @@
-
 import { decrypt, shuffleKey, swapTwo, highlightWords } from './utils.js';
 import { scoreText } from './score.js';
 import { renderChart } from './chart.js';
@@ -27,18 +26,69 @@ export function copyResult() {
   alert("解読結果をコピーしました！");
 }
 
+function parseFixedMap(input) {
+  const map = {};
+  const pairs = input.split(',').map(s => s.trim()).filter(Boolean);
+  for (const pair of pairs) {
+    const m = pair.match(/^([A-Z])→([A-Z])$/i);
+    if (m) {
+      map[m[1].toUpperCase()] = m[2].toUpperCase();
+    }
+  }
+  return map;
+}
+
+function generateConstrainedKey(fixedMap) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+  const used = new Set();
+  const result = [];
+
+  for (let c of alphabet) {
+    if (fixedMap[c]) {
+      result.push(fixedMap[c]);
+      used.add(fixedMap[c]);
+    } else {
+      result.push(null);
+    }
+  }
+
+  const remaining = alphabet.filter(c => !used.has(c));
+  for (let i = 0; i < result.length; i++) {
+    if (result[i] === null) {
+      const pick = remaining.splice(Math.floor(Math.random() * remaining.length), 1)[0];
+      result[i] = pick;
+    }
+  }
+
+  return result.join('');
+}
+
+function swapTwoRespectingFixed(str, fixedIndices) {
+  let a, b;
+  do {
+    a = Math.floor(Math.random() * 26);
+    b = Math.floor(Math.random() * 26);
+  } while (a === b || fixedIndices.has(a) || fixedIndices.has(b));
+  const arr = str.split('');
+  [arr[a], arr[b]] = [arr[b], arr[a]];
+  return arr.join('');
+}
+
 export async function startClimb() {
   cancelRequested = false;
 
   const cipherText = document.getElementById("cipherText").value.toUpperCase();
   const maxTriesRaw = parseInt(document.getElementById("maxTries").value);
   const maxTries = Math.min(maxTriesRaw, 5000);
-  if (maxTriesRaw > 5000) {
-    alert("試行回数の上限は5000回です。5000回に制限されました。");
-  }
-
   const useAnnealing = document.getElementById("useAnnealing")?.checked ?? true;
   const enableReheat = document.getElementById("enableReheat")?.checked ?? true;
+  const coolingChoice = document.getElementById("coolingRateSelect")?.value || "auto";
+  const fixedMap = parseFixedMap(document.getElementById("fixedMappings")?.value || "");
+  const fixedIndices = new Set(Object.keys(fixedMap).map(c => c.charCodeAt(0) - 65));
+
+  let T = 10.0;
+  const T0 = 10.0;
+  const coolingRate = coolingChoice === "auto" ? Math.pow(0.01 / T, 1 / maxTries) : parseFloat(coolingChoice);
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const progressBar = document.getElementById("progressBar");
   const statusArea = document.getElementById("statusArea");
@@ -56,33 +106,17 @@ export async function startClimb() {
   let progress = 0;
 
   for (let r = 0; r < repeatCount; r++) {
-    if (cancelRequested) {
-      statusArea.textContent += "\n🛑 処理はキャンセルされました";
-      return;
-    }
-
-    let currentKey = shuffleKey(alphabet);
+    let currentKey = generateConstrainedKey(fixedMap);
     let currentScore = scoreText(decrypt(cipherText, currentKey));
     let bestKey = currentKey;
     let bestScore = currentScore;
-    const scoreHistory = [currentScore];
-
-    let T = 10.0;
-    const T0 = 10.0;
-    const coolingChoice = document.getElementById("coolingRateSelect")?.value || "auto";
-    let coolingRate = coolingChoice === "auto"
-      ? Math.pow(0.01 / T, 1 / maxTries)
-      : parseFloat(coolingChoice);
-
+    let scoreHistory = [currentScore];
     let noImprovementCount = 0;
 
     for (let i = 0; i < maxTries; i++) {
-      if (cancelRequested) {
-        statusArea.textContent += "\n🛑 処理はキャンセルされました";
-        return;
-      }
+      if (cancelRequested) return;
 
-      const newKey = swapTwo(currentKey);
+      const newKey = swapTwoRespectingFixed(currentKey, fixedIndices);
       const newScore = scoreText(decrypt(cipherText, newKey));
       const delta = newScore - currentScore;
 
@@ -119,7 +153,7 @@ export async function startClimb() {
 
       if (i % 250 === 0) {
         statusArea.textContent =
-          `🔥 ${useAnnealing ? '焼きなまし' : 'ヒルクライミング'} ${r + 1} / ${repeatCount} | 試行 ${i + 1} / ${maxTries}\n` +
+          `🔥 ${useAnnealing ? '焼きなまし' : 'ヒルクライミング'} ${r + 1}/${repeatCount} | 試行 ${i + 1}/${maxTries}\n` +
           `現在スコア: ${currentScore.toFixed(2)} | ベスト: ${bestScore.toFixed(2)}\n` +
           `鍵: ${bestKey.split('').join(' ')}`;
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -149,14 +183,6 @@ export async function startClimb() {
   statusArea.textContent += "\n✅ 解読完了（" + (useAnnealing ? '焼きなまし' : 'ヒルクライミング') + "×複数回）";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const anneal = document.getElementById("useAnnealing");
-  const reheat = document.getElementById("enableReheat");
-  if (anneal && reheat) {
-    const toggle = () => {
-      reheat.disabled = !anneal.checked;
-    };
-    anneal.addEventListener("change", toggle);
-    toggle();
-  }
-});
+export function setSampleFixedKey() {
+  document.getElementById("fixedMappings").value = "V→W,R→E,D→H,P→O,B→L,F→D,H→T,X→S";
+}

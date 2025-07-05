@@ -7,7 +7,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="englishWords.js"></script>
+  <script src="englishWords_ngsl1000.js"></script>
   <script src="bigramScores.js"></script>
   <script src="trigramScores.js"></script>
 </head>
@@ -21,12 +21,16 @@
   <p>このツールは <strong>単一換字式暗号</strong> の解読専用です（ヴィジュネルなど非対応）。</p>
 
   <div class="container">
-    <!-- 入力と設定 -->
     <section class="card">
       <h2>🔐 暗号文の入力</h2>
       <textarea id="cipherText" rows="6">
-VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY TYY FRFPSYR IZ HRYD GYTYPV HPDR XYGXRYX ESGTXYRTYB GRFPHX HTPH TUSPR HRYRX TYY ABRY BYBRYA TBX HRYXBRX TBB ARA FYFHR YTY HBYLBRY HPDR OKYHRXYB TYY AK FRFYARF CR HRY JPYLYX DRUL HRY RGSRXRYT YP HRY OYKSRYFR HTPH VRYSRIR TST LPHJ YP OYKSRYFR BUICRYX FXH XKYARFHRX TST SPOYSAXYH AR XJYH LRYAXJTBYX TST PGYTYASXARX FXH SPIYHRX AR XJYH DRUL TX HTPH DIRB XTTY BBRU UBHX NIIBAHP HP YRRFR HRYDA IXHRX ARD HRYLBRRX
-	  </textarea>
+VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRITYR RSFPVRF ZI HDRAY JYRTHPY VAHD JRYHTAS ESTBARSTZBR YAODHX HDTH TUPSO HDRXRTYR BAQR BAZRYHI TSF HDR LEYXEAH PQ DTLLASRXX HDTH HP XRJEYR HDRXR YAODHX OPKRYSURSHX TYR ASXHAHEHRF TUPSO URS FRYAKASO HDRAY CEXH LPVRYX QYPU HDR JPSXRSH PQ HDR OPKRYSRF HDTH VDRSRKRY TSI QPYU PQ OPKRYSURSH ZRJPURX FRXHYEJHAKR PQ HDRXR RSFX AH AX HDR YAODH PQ HDR LRPLBR HP TBHRY PY HP TZPBAXD AH TSF HP ASXHAHEHR SRV OPKRYSURSH BTIASO AHX QPESFTHAPS PS XEJD LYASJALBRX TSF PYOTSAWASO AHX LPVRYX AS XEJD QPYU TX HP HDRU XDTBB XRRU UPXH BANRBI HP RQQRJH HDRAY XTQRHI TSF DTLLASRXX
+	</textarea>
+
+      <h3>🔒 固定鍵マッピング（</h3>
+      <input id="fixedMappings" type="text" placeholder="例: V→W,R→E,D→H,P→O,B→L,F→D,H→T,X→S" style="width: 100%;">
+	  <button type="button" onclick="setSampleFixedKey()">🔒 サンプルの固定鍵を入力</button><br>
+      <small>確定済みの解読変換を「A→T」（暗号文文字→平文文字）のように指定すると、それ以外の文字を解読対象にします。</small>
 
       <h3>🧠 アルゴリズム設定</h3>
       <label><input type="checkbox" id="useAnnealing" checked> 焼きなまし法を使用</label>
@@ -60,8 +64,8 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
         <label>試行回数（最大5000）:
           <input type="number" id="maxTries" value="1000" max="5000">
         </label><br>
-        <button onclick="startClimb()">スタート</button>
-        <button onclick="cancelClimb()">停止</button>
+<button class="big-button" onclick="startClimb()">スタート</button>
+<button class="big-button" onclick="cancelClimb()">停止</button>
       </div>
 
       <div class="progress-area">
@@ -70,7 +74,6 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
       </div>
     </section>
 
-    <!-- 結果表示 -->
     <section class="card result">
       <h2>📋 解読結果</h2>
 
@@ -93,41 +96,41 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
     </section>
   </div>
 
-  <!-- フッター -->
   <footer class="app-footer">
     <div class="footer">
       🔗 GitHubリポジトリはこちら（<a href="https://github.com/ipusiron/cipherclimb" target="_blank">ipusiron/cipherclimb</a>）
     </div>
   </footer>
 
-  <!-- ヘルプモーダル -->
+    <!-- ヘルプモーダル -->
   <div id="helpModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="hideHelp()">&times;</span>
       <h2>❔ ヘルプ：Cipher Climbとは？</h2>
       <p>このツールは、単一換字式暗号を焼きなまし法やヒルクライミング法で解読する教育ツールです。</p>
       <h3>🔐 デフォルトの暗号文について</h3>
-      <p>アメリカ独立宣言の一節を以下の換字表で暗号化しています：</p>
+      <p>アメリカ独立宣言の一節を以下の換字表で暗号化したものです。</p>
       <pre style="font-size: 0.9em;">
 A→T, B→Z, C→J, D→F, E→R, F→Q, G→O, H→D, I→A, J→C,
 K→N, L→B, M→U, N→S, O→P, P→L, Q→G, R→Y, S→X, T→H,
 U→E, V→K, W→V, X→M, Y→I, Z→W
       </pre>
-      <p>復号成功時の平文（一部）：</p>
+      <p>元の平文は以下のとおりです。</p>
       <pre style="font-size: 0.9em;">
-WE HOLD THESE TRUTHS TO BE SELF EVIDENT THAT ALL MEN ARE CREATED EQUAL ...
+WE HOLD THESE TRUTHS TO BE SELF EVIDENT THAT ALL MEN ARE CREATED EQUAL THAT THEY ARE ENDOWED BY THEIR CREATOR WITH CERTAIN UNALIENABLE RIGHTS THAT AMONG THESE ARE LIFE LIBERTY AND THE PURSUIT OF HAPPINESS THAT TO SECURE THESE RIGHTS GOVERNMENTS ARE INSTITUTED AMONG MEN DERIVING THEIR JUST POWERS FROM THE CONSENT OF THE GOVERNED THAT WHENEVER ANY FORM OF GOVERNMENT BECOMES DESTRUCTIVE OF THESE ENDS IT IS THE RIGHT OF THE PEOPLE TO ALTER OR TO ABOLISH IT AND TO INSTITUTE NEW GOVERNMENT LAYING ITS FOUNDATION ON SUCH PRINCIPLES AND ORGANIZING ITS POWERS IN SUCH FORM AS TO THEM SHALL SEEM MOST LIKELY TO EFFECT THEIR SAFETY AND HAPPINESS
       </pre>
     </div>
   </div>
 
   <!-- モジュール読み込み -->
   <script type="module">
-    import { startClimb, cancelClimb, showHelp, hideHelp, copyResult } from './main.js';
+    import { startClimb, cancelClimb, showHelp, hideHelp, copyResult, setSampleFixedKey } from './main.js';
     window.startClimb = startClimb;
     window.cancelClimb = cancelClimb;
     window.showHelp = showHelp;
     window.hideHelp = hideHelp;
     window.copyResult = copyResult;
+	window.setSampleFixedKey = setSampleFixedKey;
 
     function applyTheme() {
       const mode = localStorage.getItem("theme");
