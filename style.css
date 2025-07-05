@@ -191,11 +191,14 @@ body.dark-mode #helpButton:hover {
 
 .modal-content {
   background: white;
-  margin: 10% auto;
+  margin: 5vh auto;          /* ← 上下マージンを小さくして中央に */
   padding: 20px;
-  width: 80%;
-  max-width: 600px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;          /* ← モーダルの最大高さを90%に拡張 */
+  overflow-y: auto;          /* ← 中身をスクロール可能に */
   position: relative;
+  border-radius: 10px;
 }
 
 .close {
@@ -208,6 +211,8 @@ body.dark-mode #helpButton:hover {
 body.dark-mode .modal-content {
   background: #1e1e1e;
   color: #eee;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .indented {
