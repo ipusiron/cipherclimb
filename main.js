@@ -38,6 +38,7 @@ export async function startClimb() {
   }
 
   const useAnnealing = document.getElementById("useAnnealing")?.checked ?? true;
+  const enableReheat = document.getElementById("enableReheat")?.checked ?? true;
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const progressBar = document.getElementById("progressBar");
   const statusArea = document.getElementById("statusArea");
@@ -66,12 +67,14 @@ export async function startClimb() {
     let bestScore = currentScore;
     const scoreHistory = [currentScore];
 
-    // let T = 10.0;
-    // const Tmin = 0.01;
-    // const coolingRate = Math.pow(Tmin / T, 1 / maxTries);
-    
     let T = 10.0;
-    const coolingRate = 0.9995; // ← 非常に緩やかに冷却
+    const T0 = 10.0;
+    const coolingChoice = document.getElementById("coolingRateSelect")?.value || "auto";
+    let coolingRate = coolingChoice === "auto"
+      ? Math.pow(0.01 / T, 1 / maxTries)
+      : parseFloat(coolingChoice);
+
+    let noImprovementCount = 0;
 
     for (let i = 0; i < maxTries; i++) {
       if (cancelRequested) {
@@ -84,13 +87,11 @@ export async function startClimb() {
       const delta = newScore - currentScore;
 
       if (useAnnealing) {
-        // 焼きなまし法
         if (delta > 0 || Math.exp(delta / T) > Math.random()) {
           currentKey = newKey;
           currentScore = newScore;
         }
       } else {
-        // ヒルクライミング法
         if (delta > 0) {
           currentKey = newKey;
           currentScore = newScore;
@@ -100,6 +101,15 @@ export async function startClimb() {
       if (currentScore > bestScore) {
         bestKey = currentKey;
         bestScore = currentScore;
+        noImprovementCount = 0;
+      } else {
+        noImprovementCount++;
+      }
+
+      if (useAnnealing && enableReheat && noImprovementCount >= 500) {
+        T = T0;
+        noImprovementCount = 0;
+        console.log("♻️ 温度をリセット（局所最適脱出）");
       }
 
       T *= coolingRate;
@@ -138,3 +148,15 @@ export async function startClimb() {
   progressBar.value = totalSteps;
   statusArea.textContent += "\n✅ 解読完了（" + (useAnnealing ? '焼きなまし' : 'ヒルクライミング') + "×複数回）";
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const anneal = document.getElementById("useAnnealing");
+  const reheat = document.getElementById("enableReheat");
+  if (anneal && reheat) {
+    const toggle = () => {
+      reheat.disabled = !anneal.checked;
+    };
+    anneal.addEventListener("change", toggle);
+    toggle();
+  }
+});

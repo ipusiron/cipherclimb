@@ -209,3 +209,15 @@ body.dark-mode .modal-content {
   background: #1e1e1e;
   color: #eee;
 }
+
+.indented {
+  margin-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+/* スピナー（input number）と高さを合わせる */
+.tall-select {
+  height: 1.9em;
+  font-size: 1em;
+  padding: 0.1em 0.5em;
+}

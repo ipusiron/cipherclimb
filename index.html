@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -11,36 +12,49 @@
   <script src="trigramScores.js"></script>
 </head>
 <body>
-<div class="header-buttons">
-  <button id="helpButton" onclick="showHelp()">❔ ヘルプ</button>
-  <button id="toggleTheme">🌙 ダークモード</button>
-</div>
-<h1>🧗 サイファー・クライム（Cipher Climb）</h1>
-<p>このツールは <strong>単一換字式暗号</strong> の解読専用です（ヴィジュネル暗号は多表式なので非対応）。</p>
+  <div class="header-buttons">
+    <button id="helpButton" onclick="showHelp()">❔ ヘルプ</button>
+    <button id="toggleTheme">🌙 ダークモード</button>
+  </div>
+
+  <h1>🧗 サイファー・クライム（Cipher Climb）</h1>
+  <p>このツールは <strong>単一換字式暗号</strong> の解読専用です（ヴィジュネルなど非対応）。</p>
 
   <div class="container">
-
-    <!-- 🔐 入力と設定 -->
+    <!-- 入力と設定 -->
     <section class="card">
       <h2>🔐 暗号文の入力</h2>
-      <textarea id="cipherText" rows="6" style="width:100%;">
+      <textarea id="cipherText" rows="6">
 VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY TYY FRFPSYR IZ HRYD GYTYPV HPDR XYGXRYX ESGTXYRTYB GRFPHX HTPH TUSPR HRYRX TYY ABRY BYBRYA TBX HRYXBRX TBB ARA FYFHR YTY HBYLBRY HPDR OKYHRXYB TYY AK FRFYARF CR HRY JPYLYX DRUL HRY RGSRXRYT YP HRY OYKSRYFR HTPH VRYSRIR TST LPHJ YP OYKSRYFR BUICRYX FXH XKYARFHRX TST SPOYSAXYH AR XJYH LRYAXJTBYX TST PGYTYASXARX FXH SPIYHRX AR XJYH DRUL TX HTPH DIRB XTTY BBRU UBHX NIIBAHP HP YRRFR HRYDA IXHRX ARD HRYLBRRX
 	  </textarea>
 
       <h3>🧠 アルゴリズム設定</h3>
       <label><input type="checkbox" id="useAnnealing" checked> 焼きなまし法を使用</label>
+      <div class="indented">
+        <label>焼きなまし冷却速度:</label><br>
+        <select id="coolingRateSelect" class="tall-select">
+          <option value="auto" selected>自動（指数式）</option>
+          <option value="0.995">0.995（やや早い）</option>
+          <option value="0.999">0.999（やや緩やか）</option>
+          <option value="0.9995">0.9995（かなり緩やか）</option>
+        </select>
+      </div>
+      <label><input type="checkbox" id="enableReheat" checked> スコア停滞時に温度をリセット（局所最適脱出）</label>
 
       <h3>⚙️ スコア構成</h3>
       <label><input type="checkbox" id="score_letter" checked> 文字頻度</label><br>
       <label><input type="checkbox" id="score_ngram" checked> N-gram</label><br>
-	  <label><input type="checkbox" id="score_dict" checked> 辞書照合  単語の重み </label>
-<select id="dictWeight" style="margin-left: 0.5em;">
-  <option value="30">30（単語弱め）</option>
-  <option value="50">50</option>
-  <option value="100" selected>100（バランス型）</option>
-  <option value="150">150</option>
-  <option value="200">200（単語を最重視）</option>
-</select>
+      <label><input type="checkbox" id="score_dict" checked> 辞書照合 単語の重み</label>
+      <div class="indented">
+        <select id="dictWeight" class="tall-select">
+          <option value="30">30（弱め）</option>
+          <option value="50">50</option>
+          <option value="100" selected>100（バランス型）</option>
+          <option value="150">150</option>
+          <option value="200">200（超重視）</option>
+        </select>
+      </div>
+      <label><input type="checkbox" id="usePartialMatch" checked> 単語を部分一致でも評価する</label>
 
       <div class="controls">
         <label>試行回数（最大5000）:
@@ -56,29 +70,27 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
       </div>
     </section>
 
-    <!-- ✅ 結果表示 -->
-<section class="card result">
-  <h2>📋 解読結果</h2>
+    <!-- 結果表示 -->
+    <section class="card result">
+      <h2>📋 解読結果</h2>
 
-  <h3>🔄 解読中の情報</h3>
-  <div id="statusArea" class="highlight-box">(ステータス表示)</div>
+      <h3>🔄 解読中の情報</h3>
+      <div id="statusArea" class="highlight-box">(ステータス表示)</div>
 
-  <h3>🔑 鍵の対応表</h3>
-  <pre id="keyTable"></pre>
+      <h3>🔑 鍵の対応表</h3>
+      <pre id="keyTable"></pre>
 
-  <h3>📊 スコア</h3>
-  <div id="scoreDisplay">スコア: -</div>
+      <h3>📊 スコア</h3>
+      <div id="scoreDisplay">スコア: -</div>
 
-  <h3>📈 スコアの推移</h3>
-  <canvas id="scoreChart" height="100"></canvas>
+      <h3>📈 スコアの推移</h3>
+      <canvas id="scoreChart" height="100"></canvas>
 
-  <h3>📝 解読結果</h3>
-  <div id="highlightedText" class="highlight-box"></div>
-  <div id="highlightCount" class="meta-info"></div>
-  <button onclick="copyResult()">コピー</button>
-</section>
-
-
+      <h3>📝 解読結果</h3>
+      <div id="highlightedText" class="highlight-box"></div>
+      <div id="highlightCount" class="meta-info"></div>
+      <button onclick="copyResult()">コピー</button>
+    </section>
   </div>
 
   <!-- フッター -->
@@ -93,11 +105,18 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
     <div class="modal-content">
       <span class="close" onclick="hideHelp()">&times;</span>
       <h2>❔ ヘルプ：Cipher Climbとは？</h2>
-      <ul>
-        <li>焼きなまし法／ヒルクライミング法による鍵探索</li>
-        <li>英単語のハイライトで復号の進展を可視化</li>
-        <li>スコア構成を切り替えてアルゴリズムを学ぶ</li>
-      </ul>
+      <p>このツールは、単一換字式暗号を焼きなまし法やヒルクライミング法で解読する教育ツールです。</p>
+      <h3>🔐 デフォルトの暗号文について</h3>
+      <p>アメリカ独立宣言の一節を以下の換字表で暗号化しています：</p>
+      <pre style="font-size: 0.9em;">
+A→T, B→Z, C→J, D→F, E→R, F→Q, G→O, H→D, I→A, J→C,
+K→N, L→B, M→U, N→S, O→P, P→L, Q→G, R→Y, S→X, T→H,
+U→E, V→K, W→V, X→M, Y→I, Z→W
+      </pre>
+      <p>復号成功時の平文（一部）：</p>
+      <pre style="font-size: 0.9em;">
+WE HOLD THESE TRUTHS TO BE SELF EVIDENT THAT ALL MEN ARE CREATED EQUAL ...
+      </pre>
     </div>
   </div>
 

@@ -1,5 +1,12 @@
 # サイファー・クライム（Cipher Climb） — 古典暗号ヒルクライミング解読ツール
 
+[![GitHub Stars](https://img.shields.io/github/stars/ipusiron/cipherclimb?style=social)](https://github.com/ipusiron/cipherclimb/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/ipusiron/cipherclimb?style=social)](https://github.com/ipusiron/cipherclimb/network/members)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Built with](https://img.shields.io/badge/Built%20with-VanillaJS-blue)](#)
+[![Chart.js](https://img.shields.io/badge/Chart.js-v4-orange)](https://www.chartjs.org/)
+[![Demo](https://img.shields.io/badge/Demo-View-blue)](https://ipusiron.github.io/cipherclimb/)
+
 **Day18 - 生成AIで作るセキュリティツール100**
 
 サイファー・クライム（Cipher Climb）は、換字式暗号（代表的な古典暗号の一方式）をヒルクライミング法（hill climbing）で解読するWebアプリです。
