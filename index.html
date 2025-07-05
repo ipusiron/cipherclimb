@@ -11,54 +11,70 @@
   <script src="trigramScores.js"></script>
 </head>
 <body>
-  <button id="toggleTheme" style="float:right;">🌙 ダークモード</button>
+<div class="header-buttons">
+  <button id="helpButton" onclick="showHelp()">❔ ヘルプ</button>
+  <button id="toggleTheme">🌙 ダークモード</button>
+</div>
+<h1>🧗 サイファー・クライム（Cipher Climb）</h1>
+<p>このツールは <strong>単一換字式暗号</strong> の解読専用です（ヴィジュネルなど非対応）。</p>
 
-  <h1>🧗 サイファー・クライム（Cipher Climb）</h1>
-  <p>このツールは<strong>単一換字式暗号の解読専用</strong>です。<br>
-  多表式（例：ヴィジュネル暗号）には対応していません。</p>
+  <div class="container">
 
-  <button onclick="showHelp()">❔ ヘルプ</button>
-
-  <h2>🔐 暗号文の入力</h2>
-  <textarea id="cipherText" rows="6" style="width:100%;">
+    <!-- 🔐 入力と設定 -->
+    <section class="card">
+      <h2>🔐 暗号文の入力</h2>
+      <textarea id="cipherText" rows="6" style="width:100%;">
 VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY TYY FRFPSYR IZ HRYD GYTYPV HPDR XYGXRYX ESGTXYRTYB GRFPHX HTPH TUSPR HRYRX TYY ABRY BYBRYA TBX HRYXBRX TBB ARA FYFHR YTY HBYLBRY HPDR OKYHRXYB TYY AK FRFYARF CR HRY JPYLYX DRUL HRY RGSRXRYT YP HRY OYKSRYFR HTPH VRYSRIR TST LPHJ YP OYKSRYFR BUICRYX FXH XKYARFHRX TST SPOYSAXYH AR XJYH LRYAXJTBYX TST PGYTYASXARX FXH SPIYHRX AR XJYH DRUL TX HTPH DIRB XTTY BBRU UBHX NIIBAHP HP YRRFR HRYDA IXHRX ARD HRYLBRRX
-  </textarea><br>
+	  </textarea>
 
-  <h2>🧠 アルゴリズム設定</h2>
-<label><input type="checkbox" id="useAnnealing" checked> 焼きなまし法（Simulated Annealing）を使用する</label><br>
+      <h3>🧠 アルゴリズム設定</h3>
+      <label><input type="checkbox" id="useAnnealing" checked> 焼きなまし法を使用</label>
 
-  <h2>⚙️ スコア設定</h2>
-  <label><input type="checkbox" id="score_letter" checked> 文字頻度</label><br>
-  <label><input type="checkbox" id="score_ngram" checked> N-gram（bigram/trigram）</label><br>
-  <label><input type="checkbox" id="score_dict" checked> 英単語辞書マッチ</label>
+      <h3>⚙️ スコア構成</h3>
+      <label><input type="checkbox" id="score_letter" checked> 文字頻度</label><br>
+      <label><input type="checkbox" id="score_ngram" checked> N-gram</label><br>
+      <label><input type="checkbox" id="score_dict" checked> 辞書照合</label>
 
-  <label>試行回数（最大5000）:
-    <input type="number" id="maxTries" value="1000" max="5000">
-  </label><br>
-  <button onclick="startClimb()">スタート</button>
-  <button onclick="cancelClimb()">停止</button>
-  
-  <h2>⏳ 進行状況</h2>
-  <progress id="progressBar" value="0" max="100" style="width: 100%; height: 20px;"></progress>
+      <div class="controls">
+        <label>試行回数（最大5000）:
+          <input type="number" id="maxTries" value="1000" max="5000">
+        </label><br>
+        <button onclick="startClimb()">スタート</button>
+        <button onclick="cancelClimb()">停止</button>
+      </div>
 
+      <div class="progress-area">
+        <h3>⏳ 進行状況</h3>
+        <progress id="progressBar" value="0" max="100"></progress>
+      </div>
+    </section>
 
-  <h2>🔄 解読中の情報</h2>
+    <!-- ✅ 結果表示 -->
+<section class="card result">
+  <h2>📋 解読結果</h2>
+
+  <h3>🔄 解読中の情報</h3>
   <div id="statusArea" class="highlight-box">(ステータス表示)</div>
 
-  <h2>🔑 鍵の対応表</h2>
-  <pre id="keyTable">（ここに鍵が表示されます）</pre>
+  <h3>🔑 鍵の対応表</h3>
+  <pre id="keyTable"></pre>
 
-  <h2>📊 スコア</h2>
+  <h3>📊 スコア</h3>
   <div id="scoreDisplay">スコア: -</div>
 
-  <h2>📝 解読結果</h2>
-  <div id="highlightedText" class="highlight-box"></div>
-  <div id="highlightCount" style="margin-top:0.5em; font-size:0.9em; color:#444;"></div>
-  <button onclick="copyResult()">コピー</button>
-
-  <h2>📈 スコアの推移</h2>
+  <h3>📈 スコアの推移</h3>
   <canvas id="scoreChart" height="100"></canvas>
 
+  <h3>📝 解読結果</h3>
+  <div id="highlightedText" class="highlight-box"></div>
+  <div id="highlightCount" class="meta-info"></div>
+  <button onclick="copyResult()">コピー</button>
+</section>
+
+
+  </div>
+
+  <!-- フッター -->
   <footer class="app-footer">
     <div class="footer">
       🔗 GitHubリポジトリはこちら（<a href="https://github.com/ipusiron/cipherclimb" target="_blank">ipusiron/cipherclimb</a>）
@@ -69,11 +85,11 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
   <div id="helpModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="hideHelp()">&times;</span>
-      <h2>❔ ヘルプ：サイファー・クライムとは？</h2>
-      <p>このツールは、単一換字式暗号を焼きなまし法で解読する教育ツールです。</p>
+      <h2>❔ ヘルプ：Cipher Climbとは？</h2>
       <ul>
-        <li>スコア要素のON/OFFでアルゴリズムの効果を比較できます</li>
-        <li>英単語をハイライト表示して復号の進展が見える化されます</li>
+        <li>焼きなまし法／ヒルクライミング法による鍵探索</li>
+        <li>英単語のハイライトで復号の進展を可視化</li>
+        <li>スコア構成を切り替えてアルゴリズムを学ぶ</li>
       </ul>
     </div>
   </div>
@@ -81,15 +97,12 @@ VR DPFY HRYRX HYOHXRH HP ZR XBRQ KAKFRH HTPB TBB UUR YTY GYFRHT GRGTL HTPH HIRY 
   <!-- モジュール読み込み -->
   <script type="module">
     import { startClimb, cancelClimb, showHelp, hideHelp, copyResult } from './main.js';
-
-    // グローバルに公開
     window.startClimb = startClimb;
     window.cancelClimb = cancelClimb;
     window.showHelp = showHelp;
     window.hideHelp = hideHelp;
     window.copyResult = copyResult;
 
-    // テーマ切り替え処理
     function applyTheme() {
       const mode = localStorage.getItem("theme");
       const body = document.body;
