@@ -1,4 +1,4 @@
-# サイファー・クライム（Cipher Climb） — 古典暗号ヒルクライミング解読ツール
+# Cipher Climb — 古典暗号ヒルクライミング解読ツール
 
 [![GitHub Stars](https://img.shields.io/github/stars/ipusiron/cipherclimb?style=social)](https://github.com/ipusiron/cipherclimb/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/ipusiron/cipherclimb?style=social)](https://github.com/ipusiron/cipherclimb/network/members)
@@ -9,7 +9,7 @@
 
 **Day18 - 生成AIで作るセキュリティツール100**
 
-サイファー・クライム（Cipher Climb）は、換字式暗号（代表的な古典暗号の一方式）をヒルクライミング法（hill climbing）で解読するWebアプリです。
+Cipher Climb（サイファー・クライム）は、換字式暗号（代表的な古典暗号の一方式）をヒルクライミング法（hill climbing）で解読するWebアプリです。
 
 "cipher"（暗号）と"climb（登る）"を組み合わせた言葉であり、ヒルクライミング法を用いて暗号を徐々に解きほぐしていくプロセスを表現しています。
 
@@ -48,7 +48,7 @@
 
 ## 💡 ユーザーが知っておくとよい技術的ポイント
 
-- 暗号鍵は「26文字のアルファベットの並び替え」によって構成されます（例: `ZEBRAS...`）。
+- 暗号鍵は「26文字のアルファベットの並び替え」によって構成されます（例： `ZEBRAS...`）。
 - 固定鍵は「この文字は必ずこの文字に対応する」と明示的に指定できますが、**暗号文側の文字が重複指定されると無効です**（UI上で赤く警告されます）。
 - スコア評価は以下の合計で行われます：
   - 英語の文字頻度に近いか（例：'E'、'T'が多く含まれる）

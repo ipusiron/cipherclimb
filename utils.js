@@ -1,4 +1,10 @@
 // utils.js
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 export function decrypt(text, key) {
   let result = '';
   for (let c of text.toUpperCase()) {
@@ -31,7 +37,7 @@ export function swapTwo(str) {
 }
 
 export function highlightWords(text) {
-  if (typeof englishWords === "undefined") return { html: text, count: 0 };
+  if (typeof englishWords === "undefined") return { html: escapeHtml(text), count: 0 };
 
   // 小文字に変換した辞書セットを作成
   const lowerDict = new Set([...englishWords].map(w => w.toLowerCase()));
@@ -43,9 +49,9 @@ export function highlightWords(text) {
     const plain = w.replace(/[^A-Z]/gi, '').toLowerCase();
     if (plain.length >= 3 && lowerDict.has(plain)) {
       count++;
-      return `<span class="highlight-word">${w}</span>`;
+      return `<span class="highlight-word">${escapeHtml(w)}</span>`;
     }
-    return w;
+    return escapeHtml(w);
   }).join('');
 
   return { html, count };
