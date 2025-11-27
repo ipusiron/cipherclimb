@@ -1,3 +1,44 @@
+<!--
+---
+id: day018
+slug: cipherclimb
+
+title: "Cipher Climb"
+
+subtitle_ja: "ヒルクライミング解読ツール"
+subtitle_en: "Hill Climbing Decryption Tool"
+
+description_ja: "換字式暗号をヒルクライミング法で解読するWebアプリ。暗号解読の過程を視覚化し、焼きなまし法との違いを体験できる教育ツール"
+description_en: "A web app that decrypts substitution ciphers using hill climbing algorithm. Educational tool to visualize the decryption process and experience differences with simulated annealing"
+
+category_ja:
+  - 古典暗号
+  - 暗号解読
+  - 換字式暗号
+category_en:
+  - Classical Cryptography
+  - Cryptanalysis
+  - Substitution Cipher
+
+difficulty: 2
+
+tags:
+  - cipher
+  - cryptography
+  - hill-climbing
+  - substitution-cipher
+  - educational
+  - security
+  - decryption
+  - simulated-annealing
+
+repo_url: "https://github.com/ipusiron/cipherclimb"
+demo_url: "https://ipusiron.github.io/cipherclimb/"
+
+hub: true
+---
+-->
+
 # Cipher Climb — 古典暗号ヒルクライミング解読ツール
 
 [![GitHub Stars](https://img.shields.io/github/stars/ipusiron/cipherclimb?style=social)](https://github.com/ipusiron/cipherclimb/stargazers)
