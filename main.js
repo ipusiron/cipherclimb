@@ -1,13 +1,24 @@
-import { decrypt, swapTwo, highlightWords } from './utils.js';
-import { scoreText } from './score.js';
-import { initChart, addScore } from './chart.js';
+import {
+  ALPHABET, decrypt, invertKey, highlightSegments, prepareText, formatScore,
+  analyzeCipherText, parseMaxTries, parseSeed, findFixedConflicts,
+} from './utils.js';
+import { scoreBreakdown } from './score.js';
+import { climb, createRng, RESTARTS } from './solver.js';
+import { initChart, addPoints } from './chart.js';
+import { DICTIONARIES } from './dictionaries.js';
+import { SAMPLE_CIPHER, SAMPLE_FIXED, SAMPLE_PLAIN, SAMPLE_P2C } from './samples.js';
+import { initTheme } from './theme.js';
+
+const byId = (id) => document.getElementById(id);
+let running = false;
+let cancelRequested = false;
 
 function getFixedMapFromUI() {
   const map = {};
   for (let i = 0; i < 26; i++) {
     const plain = String.fromCharCode(65 + i);
     const sel = document.getElementById('fixed_' + plain);
-    const val = sel?.value?.toUpperCase();
+    const val = sel?.value;
     if (val && /^[A-Z]$/.test(val)) {
       map[plain] = val;
     }
@@ -15,292 +26,283 @@ function getFixedMapFromUI() {
   return map;
 }
 
-function generateDecryptKeyFromFixedMap(fixedMap) {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  const decryptArr = Array(26).fill(null);
-  const used = new Set();
-
-  for (let i = 0; i < 26; i++) {
-    const plain = String.fromCharCode(65 + i);
-    const cipher = fixedMap[plain];
-    if (cipher) {
-      const index = cipher.charCodeAt(0) - 65;
-      decryptArr[index] = plain;
-      used.add(cipher);
+function buildKeyTableFromDecryptKey(decryptKey, fixedMap = {}, cipherLettersUsed = '') {
+  const mapping = invertKey(decryptKey);
+  const container = byId('keyTable');
+  container.replaceChildren();
+  let unused = false;
+  for (let start = 0; start < 26; start += 13) {
+    const table = document.createElement('table');
+    table.className = 'keytable';
+    for (const [label, isCipher] of [['平文', false], ['暗号文', true]]) {
+      const row = document.createElement('tr');
+      const header = document.createElement('th');
+      header.scope = 'row';
+      header.textContent = label;
+      row.append(header);
+      for (let i = start; i < start + 13; i++) {
+        const cell = document.createElement('td');
+        cell.textContent = isCipher ? mapping[i] : ALPHABET[i];
+        if (fixedMap[ALPHABET[i]]) cell.classList.add('fixed');
+        if (isCipher && !cipherLettersUsed.includes(mapping[i])) {
+          cell.classList.add('unused');
+          unused = true;
+        }
+        row.append(cell);
+      }
+      table.append(row);
     }
+    container.append(table);
   }
-
-  const unusedPlain = alphabet.filter(
-    (c) => !Object.keys(fixedMap).includes(c)
-  );
-  const unusedCipher = alphabet.filter((c) => !used.has(c));
-
-  for (let i = 0; i < unusedPlain.length; i++) {
-    const plain = unusedPlain[i];
-    const cipher = unusedCipher[i];
-    const index = cipher.charCodeAt(0) - 65;
-    decryptArr[index] = plain;
+  if (unused) {
+    const note = document.createElement('p');
+    note.className = 'meta-info';
+    note.textContent = '薄い文字は暗号文に現れないため、対応が決まりません';
+    container.append(note);
   }
-
-  return decryptArr.join('');
-}
-
-function buildKeyTableFromDecryptKey(decryptKey, fixedMap = {}) {
-  const plain = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const mapping = {};
-
-  for (let i = 0; i < 26; i++) {
-    const cipherChar = String.fromCharCode(65 + i); // A〜Z
-    const plainChar = decryptKey[i];
-    if (plainChar) {
-      mapping[plainChar] = cipherChar;
-    }
-  }
-
-  const cipherRow = [];
-  for (let i = 0; i < 26; i++) {
-    const plainChar = String.fromCharCode(65 + i);
-    const cipherChar = mapping[plainChar];
-    if (!cipherChar) {
-      cipherRow.push('.');
-    } else if (fixedMap[plainChar]) {
-      cipherRow.push(`<span class="fixed">${cipherChar}</span>`);
-    } else {
-      cipherRow.push(cipherChar);
-    }
-  }
-
-  return `<div class="keytable">
-Plain : ${plain.split('').join(' ')}<br>
-Cipher: ${cipherRow.join(' ')}
-</div>`;
-}
-
-function swapTwoRespectingFixed(str, fixedIndices) {
-  let a, b;
-  do {
-    a = Math.floor(Math.random() * 26);
-    b = Math.floor(Math.random() * 26);
-  } while (a === b || fixedIndices.has(a) || fixedIndices.has(b));
-  const arr = str.split('');
-  [arr[a], arr[b]] = [arr[b], arr[a]];
-  return arr.join('');
 }
 
 function setSampleFixedKey() {
-  const sample = {
-    /* 平文: "暗号文" */
-    W: 'V',
-    E: 'R',
-    H: 'D',
-    O: 'P',
-    L: 'B',
-    D: 'F',
-    T: 'H',
-    S: 'X',
-  };
-  for (let i = 0; i < 26; i++) {
-    const plain = String.fromCharCode(65 + i);
-    const sel = document.getElementById('fixed_' + plain);
-    if (sel) {
-      sel.classList.remove('duplicate');
-      sel.value = sample[plain] || '';
-    }
-  }
+  for (const plain of ALPHABET) byId('fixed_' + plain).value = SAMPLE_FIXED[plain] || '';
   validateFixedKeyConflicts();
+  if (byId('cipherText').value.trim() !== SAMPLE_CIPHER) {
+    byId('fixedKeyMessage').textContent =
+      'サンプルの固定鍵は、サンプルの暗号文のためのものです。暗号文を変えた場合は「固定鍵をクリア」で外してください';
+  }
+}
+
+function readRunConfig() {
+  const cipherText = byId('cipherText').value;
+  const fixedMap = getFixedMapFromUI();
+  const analysis = analyzeCipherText(cipherText);
+  const tries = parseMaxTries(byId('maxTries').value);
+  const seed = parseSeed(byId('seedInput').value);
+  const scoring = {
+    useLetter: byId('score_letter').checked, useNgram: byId('score_ngram').checked,
+    useDict: byId('score_dict').checked, dictWeight: Number(byId('dictWeight').value),
+    usePartial: byId('usePartialMatch').checked,
+    dictionary: DICTIONARIES[byId('dictSource').value].words,
+  };
+  const conflict = conflictMessage(findFixedConflicts(fixedMap));
+  let error = conflict;
+  if (!error && !analysis.letters) error = '英字（A〜Z）を含む暗号文を入力してください';
+  if (!error && analysis.tooLong) error = `暗号文が長すぎます（${analysis.length}文字）。10,000文字以内にしてください`;
+  if (!error && !tries.ok) error = '試行回数は1〜20000の整数で入力してください';
+  if (!error && !seed.ok) error = 'シードは0〜4294967295の整数で入力するか、空欄にしてください';
+  if (!error && !scoring.useLetter && !scoring.useNgram && !scoring.useDict) error = 'スコア構成を1つ以上選んでください';
+  const warnings = [];
+  if (analysis.short) warnings.push(`暗号文が短い（英字${analysis.letters}字）ため、正しく解けないことがあります。目安は英字100字以上です`);
+  if (analysis.fullwidth) warnings.push(`全角の英字${analysis.fullwidth}文字は変換されません。半角に直してください`);
+  byId('runMessage').className = 'message ' + (error ? 'error' : 'warning');
+  byId('runMessage').textContent = error || warnings.join('／');
+  if (error) return null;
+  const runSeed = seed.value ?? crypto.getRandomValues(new Uint32Array(1))[0];
+  return {
+    cipherText, fixedMap, maxTries: tries.value, scoring, runSeed, rng: createRng(runSeed),
+    useAnnealing: byId('useAnnealing').checked, enableReheat: byId('enableReheat').checked,
+    cooling: byId('coolingRateSelect').value,
+  };
+}
+
+function showProgress(snapshot, config) {
+  const method = config.useAnnealing ? '🔥 焼きなまし法' : '⛰️ ヒルクライミング法';
+  const temperature = config.useAnnealing ? ` | 温度 ${formatScore(snapshot.temperature)}` : '';
+  byId('statusArea').textContent =
+    `${method} ${snapshot.restart + 1}/${RESTARTS} | 試行 ${snapshot.iteration + 1}/${config.maxTries}${temperature}\n`
+    + `現在のスコア: ${formatScore(snapshot.currentScore)} | この回のベスト: ${formatScore(snapshot.restartBestScore)} | `
+    + `全体のベスト: ${formatScore(snapshot.bestScore)}\n鍵: ${snapshot.bestKey.split('').join(' ')}`;
+  byId('progressBar').value = snapshot.triesDone;
+}
+
+function showResult(result, config) {
+  const plainText = result.plainText ?? decrypt(config.cipherText, result.bestKey);
+  buildKeyTableFromDecryptKey(result.bestKey, config.fixedMap, prepareText(config.cipherText).cipherLettersUsed);
+  byId('scoreDisplay').textContent = `スコア: ${formatScore(result.bestScore)}`;
+  const breakdown = scoreBreakdown(plainText, config.scoring);
+  const off = (enabled) => enabled ? '' : '（OFF）';
+  byId('scoreBreakdown').textContent =
+    `内訳: 文字頻度 ${formatScore(breakdown.letter)}${off(config.scoring.useLetter)} / `
+    + `N-gram ${formatScore(breakdown.ngram)}${off(config.scoring.useNgram)} / `
+    + `辞書 +${formatScore(breakdown.dict)}${off(config.scoring.useDict)}`;
+  const highlighted = highlightSegments(plainText, config.scoring.dictionary);
+  const nodes = highlighted.segments.map((segment) => {
+    if (!segment.highlight) return document.createTextNode(segment.text);
+    const mark = document.createElement('mark');
+    mark.className = 'highlight-word';
+    mark.textContent = segment.text;
+    return mark;
+  });
+  byId('highlightedText').replaceChildren(...nodes);
+  byId('highlightCount').textContent = `🔍 ${highlighted.count} 個の英単語がハイライトされました`;
+  byId('copyButton').disabled = false;
 }
 
 async function startClimb() {
-  // ✅ まず固定鍵に矛盾があるかチェック
-  if (document.querySelectorAll('.fixed-key-ui select.duplicate').length > 0) {
-    alert(
-      '❌ 固定鍵に重複があります。同じ暗号文字が複数割り当てられています。これは単一換字式暗号では許容されません。'
-    );
-    return;
-  }
-
-  cancelRequested = false; //
-
-  const cipherText = document.getElementById('cipherText').value.toUpperCase();
-  const maxTriesRaw = parseInt(document.getElementById('maxTries').value);
-  const maxTries = Math.min(maxTriesRaw, 5000);
-  const useAnnealing = document.getElementById('useAnnealing')?.checked ?? true;
-  const enableReheat = document.getElementById('enableReheat')?.checked ?? true;
-  const coolingChoice =
-    document.getElementById('coolingRateSelect')?.value || 'auto';
-  const fixedMap = getFixedMapFromUI();
-  const progressBar = document.getElementById('progressBar');
-  const statusArea = document.getElementById('statusArea');
-  const repeatCount = 5;
-  const totalSteps = repeatCount * maxTries;
-  progressBar.max = totalSteps;
+  if (running) return;
+  const config = readRunConfig();
+  if (!config) return;
+  running = true;
+  cancelRequested = false;
+  byId('startButton').disabled = true;
+  byId('stopButton').disabled = false;
+  byId('copyButton').disabled = true;
+  byId('copyMessage').textContent = '';
+  const progressBar = byId('progressBar');
+  progressBar.max = RESTARTS * config.maxTries;
   progressBar.value = 0;
-  statusArea.textContent = '';
+  byId('statusArea').textContent = '';
+  byId('keyTable').textContent = '(鍵の計算中...)';
+  byId('scoreDisplay').textContent = 'スコア: (計算中)';
+  byId('scoreBreakdown').textContent = '';
+  byId('runMeta').textContent = `シード: ${config.runSeed}`;
+  byId('runAnnounce').textContent = '解読を開始しました';
+  byId('highlightedText').textContent = '解読中です...';
+  byId('highlightedText').classList.add('processing');
+  byId('highlightCount').textContent = '';
 
-  document.getElementById('keyTable').innerHTML = '(鍵の計算中...)';
-  document.getElementById('scoreDisplay').textContent = 'スコア: (計算中)';
-  document.getElementById('highlightedText').innerHTML =
-    '<em>解読中です...</em>';
-  document.getElementById('highlightedText').classList.add('processing');
-  document.getElementById('highlightCount').textContent = '';
-
-  initChart();
-
-  let globalBestScore = -Infinity;
-  let globalBestKey = '';
-  let globalBestPlain = '';
-  let progress = 0;
-
-  // decryptKey のインデックス位置にマッチさせる
-  const fixedIndices = new Set();
-  for (const [plain, cipher] of Object.entries(fixedMap)) {
-    const cipherIdx = cipher.charCodeAt(0) - 65;
-    fixedIndices.add(cipherIdx); // decryptKey[暗号文字] = 平文文字
-  }
-
-  for (let r = 0; r < repeatCount; r++) {
-    let currentKey = generateDecryptKeyFromFixedMap(fixedMap);
-    let currentScore = scoreText(decrypt(cipherText, currentKey));
-    let bestKey = currentKey;
-    let bestScore = currentScore;
-    let noImprovementCount = 0;
-    let T = 10.0;
-    const T0 = 10.0;
-    const coolingRate =
-      coolingChoice === 'auto'
-        ? Math.pow(0.01 / T, 1 / maxTries)
-        : parseFloat(coolingChoice);
-
-    for (let i = 0; i < maxTries; i++) {
-      if (cancelRequested) return;
-
-      const newKey = swapTwoRespectingFixed(bestKey, fixedIndices);
-      const score = scoreText(decrypt(cipherText, newKey));
-      const delta = score - currentScore;
-      const accept =
-        delta > 0 || (useAnnealing && Math.exp(delta / T) > Math.random());
-
-      if (accept) {
-        bestKey = newKey;
-        currentScore = score;
-        if (score > bestScore) {
-          bestScore = score;
-        }
-        noImprovementCount = 0;
-      } else {
-        noImprovementCount++;
+  const iterator = climb(config);
+  let pointCount = 0;
+  try {
+    initChart();
+    while (true) {
+      const step = iterator.next();
+      if (step.done) {
+        addPoints(step.value.history.slice(pointCount));
+        showResult(step.value, config);
+        progressBar.value = step.value.totalTries;
+        const note = step.value.searched
+          ? `✅ 解読完了（再加熱: ${step.value.reheats}回）`
+          : '✅ 解読完了。固定鍵だけで鍵が決まるため、探索は行いませんでした';
+        byId('statusArea').textContent = note
+          + `\n全体のベスト: ${formatScore(step.value.bestScore)} | 総試行回数: ${step.value.triesDone}`
+          + `\n鍵: ${step.value.bestKey.split('').join(' ')}`;
+        byId('runAnnounce').textContent = note;
+        break;
       }
-
-      if (useAnnealing && enableReheat && noImprovementCount >= 500) {
-        T = T0;
-        noImprovementCount = 0;
-        console.log('♻️ 温度リセット');
+      const snapshot = step.value;
+      addPoints(snapshot.points);
+      pointCount += snapshot.points.length;
+      showProgress(snapshot, config);
+      if (cancelRequested) {
+        showResult(snapshot, config);
+        byId('statusArea').textContent += '\n⏹ 停止しました';
+        byId('runAnnounce').textContent = '⏹ 停止しました';
+        iterator.return();
+        break;
       }
-
-      T *= coolingRate;
-      progress++;
-      progressBar.value = progress;
-
-      if (i % 100 === 0) addScore(bestScore, progress);
-      if (i % 250 === 0) {
-        statusArea.textContent =
-          `🔥 ${useAnnealing ? '焼きなまし' : 'ヒルクライミング'} ${
-            r + 1
-          }/${repeatCount} | 試行 ${i + 1}/${maxTries}
-` +
-          `現在スコア: ${currentScore.toFixed(2)} | ベスト: ${bestScore.toFixed(
-            2
-          )}
-` +
-          `鍵: ${bestKey.split('').join(' ')}`;
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
-
-    if (bestScore > globalBestScore) {
-      globalBestScore = bestScore;
-      globalBestKey = bestKey;
-      globalBestPlain = decrypt(cipherText, bestKey);
-    }
+  } catch {
+    byId('runMessage').className = 'message error';
+    byId('runMessage').textContent = '解読中にエラーが発生しました。設定を確認して再実行してください';
+    byId('runAnnounce').textContent = '解読中にエラーが発生しました';
+  } finally {
+    running = false;
+    byId('startButton').disabled = false;
+    byId('stopButton').disabled = true;
+    byId('highlightedText').classList.remove('processing');
   }
-
-  document.getElementById('keyTable').innerHTML = buildKeyTableFromDecryptKey(
-    globalBestKey,
-    fixedMap
-  );
-  document.getElementById(
-    'scoreDisplay'
-  ).textContent = `スコア: ${globalBestScore.toFixed(2)}`;
-
-  const highlighted = highlightWords(globalBestPlain);
-  document.getElementById('highlightedText').innerHTML = highlighted.html;
-  document.getElementById('highlightedText').classList.remove('processing');
-  document.getElementById(
-    'highlightCount'
-  ).textContent = `🔍 ${highlighted.count} 個の英単語がハイライトされました`;
-
-  progressBar.value = totalSteps;
-  statusArea.textContent += '\n✅ 解読完了';
 }
-let cancelRequested = false;
 
 function cancelClimb() {
   cancelRequested = true;
 }
 
 function showHelp() {
-  document.getElementById('helpModal').style.display = 'block';
+  byId('helpModal').hidden = false;
+  document.body.classList.add('modal-open');
+  byId('helpModal').querySelector('.close').focus();
 }
+
 function hideHelp() {
-  document.getElementById('helpModal').style.display = 'none';
+  byId('helpModal').hidden = true;
+  document.body.classList.remove('modal-open');
+  byId('helpButton').focus();
 }
-function copyResult() {
-  const text = document.getElementById('highlightedText').innerText;
-  navigator.clipboard
-    .writeText(text)
-    .then(() => alert('解読結果をコピーしました！'));
+
+async function copyResult() {
+  if (byId('copyButton').disabled) return;
+  try {
+    await navigator.clipboard.writeText(byId('highlightedText').textContent);
+    byId('copyMessage').textContent = '解読結果をコピーしました';
+  } catch {
+    byId('copyMessage').textContent = 'コピーできませんでした。テキストを選択してコピーしてください';
+  }
+}
+
+function conflictMessage(conflicts) {
+  return conflicts.map(({ cipher, plains }) =>
+    `固定鍵に重複があります: 暗号文字 ${cipher} を ${plains.join(' と ')} に割り当てています`).join('／');
 }
 
 function validateFixedKeyConflicts() {
-  const selected = {};
-  const conflicts = new Set();
+  const conflicts = findFixedConflicts(getFixedMapFromUI());
+  const duplicate = new Set(conflicts.flatMap(({ plains }) => plains));
+  for (const plain of ALPHABET) byId('fixed_' + plain).classList.toggle('duplicate', duplicate.has(plain));
+  byId('fixedKeyMessage').textContent = conflictMessage(conflicts);
+}
 
-  for (let i = 0; i < 26; i++) {
-    const plain = String.fromCharCode(65 + i);
-    const sel = document.getElementById('fixed_' + plain);
-    sel.classList.remove('duplicate');
-    const val = sel.value?.toUpperCase();
+function createFixedKeyGrid() {
+  for (const plain of ALPHABET) {
+    const label = document.createElement('label');
+    label.className = 'fixed-cell';
+    const caption = document.createElement('span');
+    caption.textContent = plain;
+    const select = document.createElement('select');
+    select.id = 'fixed_' + plain;
+    select.setAttribute('aria-label', `平文${plain}に対応する暗号文字`);
+    for (const value of ['', ...ALPHABET]) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value || '?';
+      select.append(option);
+    }
+    label.append(caption, select);
+    byId('fixedKeyGrid').append(label);
+  }
+}
 
-    if (val && /^[A-Z]$/.test(val)) {
-      if (selected[val]) {
-        // すでに使われていたら両者に警告
-        conflicts.add(val);
-      } else {
-        selected[val] = plain;
+function init() {
+  byId('cipherText').value = SAMPLE_CIPHER;
+  byId('samplePlainHelp').textContent = SAMPLE_PLAIN;
+  byId('sampleKeyHelp').textContent = [...ALPHABET].map((plain, i) => plain + '→' + SAMPLE_P2C[i]).join(', ');
+  createFixedKeyGrid();
+  initTheme();
+  byId('fixedKeyGrid').addEventListener('change', validateFixedKeyConflicts);
+  byId('sampleFixedButton').addEventListener('click', setSampleFixedKey);
+  byId('clearFixedButton').addEventListener('click', () => {
+    for (const plain of ALPHABET) byId('fixed_' + plain).value = '';
+    validateFixedKeyConflicts();
+  });
+  byId('startButton').addEventListener('click', startClimb);
+  byId('stopButton').addEventListener('click', cancelClimb);
+  byId('copyButton').addEventListener('click', copyResult);
+  byId('helpButton').addEventListener('click', showHelp);
+  byId('helpModal').querySelector('.close').addEventListener('click', hideHelp);
+  byId('helpModal').addEventListener('click', (event) => {
+    if (event.target === byId('helpModal')) hideHelp();
+  });
+  byId('helpModal').addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      hideHelp();
+    }
+    if (event.key === 'Tab') {
+      const focusable = [...byId('helpModal').querySelectorAll('button, a[href], input, select, textarea, [tabindex="0"]')];
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if ((event.shiftKey && document.activeElement === first) || (!event.shiftKey && document.activeElement === last)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
       }
     }
-  }
-
-  // 再びループして矛盾のあるselectにclass追加
-  for (let i = 0; i < 26; i++) {
-    const plain = String.fromCharCode(65 + i);
-    const sel = document.getElementById('fixed_' + plain);
-    const val = sel.value?.toUpperCase();
-    if (conflicts.has(val)) {
-      sel.classList.add('duplicate');
-    }
-  }
+  });
+  const updateAnnealing = () => {
+    byId('enableReheat').disabled = !byId('useAnnealing').checked;
+    byId('coolingRateSelect').disabled = !byId('useAnnealing').checked;
+  };
+  byId('useAnnealing').addEventListener('change', updateAnnealing);
+  updateAnnealing();
 }
 
-window.startClimb = startClimb;
-window.cancelClimb = cancelClimb;
-window.setSampleFixedKey = setSampleFixedKey;
-window.copyResult = copyResult;
-window.showHelp = showHelp;
-window.hideHelp = hideHelp;
-
-for (let i = 0; i < 26; i++) {
-  const id = `fixed_${String.fromCharCode(65 + i)}`;
-  const sel = document.getElementById(id);
-  sel.addEventListener('input', validateFixedKeyConflicts);
-}
+init();

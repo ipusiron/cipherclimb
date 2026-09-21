@@ -1,4 +1,4 @@
-const englishWords = new Set([
+export const englishWordsGoogle10000 = new Set([
   "AAA",
   "AARON",
   "ABANDONED",

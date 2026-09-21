@@ -1,4 +1,4 @@
-const englishWords = new Set([
+export const englishWordsBasic343 = new Set([
   "ABOUT",
   "ADD",
   "AFTER",
