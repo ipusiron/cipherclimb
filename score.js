@@ -1,74 +1,71 @@
-export function scoreText(text) {
-  const useLetter = document.getElementById("score_letter")?.checked ?? true;
-  const useNgram = document.getElementById("score_ngram")?.checked ?? true;
-  const useDict  = document.getElementById("score_dict")?.checked ?? true;
+import { NGRAM_FLOOR, UNIGRAM, BIGRAM_ROWS, TRIGRAM_ROWS } from './ngramModel.js';
+import { ALPHABET, MIN_WORD_LENGTH, prepareText } from './utils.js';
 
-  let total = 0;
-  if (useLetter) total += letterFrequencyScore(text);
-  if (useNgram)  total += ngramScore(text);
-  if (useDict)   total += dictionaryMatchScore(text);
-  return total;
+export const SCORE_SCALE = 100;
+
+export function decodeRows(rows) {
+  const table = new Int16Array(rows.length * 26);
+  rows.forEach((row, i) => {
+    for (let j = 0; j < 26; j++) table[i * 26 + j] = -parseInt(row.slice(j * 2, j * 2 + 2), 36);
+  });
+  return table;
 }
 
-export function letterFrequencyScore(text) {
-  const freq = {
-    E: 12.70, T: 9.06, A: 8.17, O: 7.51, I: 6.97, N: 6.75,
-    S: 6.33, H: 6.09, R: 5.99, D: 4.25, L: 4.03, C: 2.78,
-    U: 2.76, M: 2.41, W: 2.36, F: 2.23, G: 2.02, Y: 1.97,
-    P: 1.93, B: 1.49, V: 0.98, K: 0.77, X: 0.15, J: 0.15,
-    Q: 0.10, Z: 0.07
-  };
-  const upper = text.toUpperCase().replace(/[^A-Z]/g, '');
-  const counts = {};
-  for (let c of upper) counts[c] = (counts[c] || 0) + 1;
-  let score = 0;
-  for (let c in freq) {
-    const observed = counts[c] || 0;
-    score += freq[c] * observed;
+export const MODEL = {
+  floor: NGRAM_FLOOR,
+  uni: Int16Array.from(UNIGRAM),
+  bi: decodeRows(BIGRAM_ROWS),
+  tri: decodeRows(TRIGRAM_ROWS),
+};
+
+export function wordMatches(word, dictionary, usePartial) {
+  if (word.length < MIN_WORD_LENGTH) return false;
+  if (dictionary.has(word)) return true;
+  if (!usePartial) return false;
+  for (let n = MIN_WORD_LENGTH; n < word.length; n++) {
+    if (dictionary.has(word.slice(0, n))) return true;
   }
-  return score;
+  return false;
 }
 
-export function ngramScore(text) {
-  let bigramScore = 0;
-  let trigramScore = 0;
-  const upper = text.toUpperCase().replace(/[^A-Z]/g, '');
-  for (let i = 0; i < upper.length - 1; i++) {
-    const bg = upper.slice(i, i + 2);
-    if (bigramScores[bg]) bigramScore += bigramScores[bg];
-  }
-  for (let i = 0; i < upper.length - 2; i++) {
-    const tg = upper.slice(i, i + 3);
-    if (trigramScores[tg]) trigramScore += trigramScores[tg];
-  }
-  return bigramScore + trigramScore * 2;
-}
-
-export function dictionaryMatchScore(text) {
-  if (typeof englishWords === "undefined") return 0;
-
-  const usePartial = document.getElementById("usePartialMatch")?.checked ?? true;
-  const weight = parseInt(document.getElementById("dictWeight")?.value || "100");
-  const lowerDict = new Set([...englishWords].map(w => w.toLowerCase()));
-
-  const words = text.split(/\b/);
-  let count = 0;
-
-  for (let w of words) {
-    const plain = w.replace(/[^A-Z]/gi, '').toLowerCase();
-    if (plain.length >= 3) {
-      if (!usePartial && lowerDict.has(plain)) {
-        count += 1;
-      } else if (usePartial) {
-        for (let dictWord of lowerDict) {
-          if (plain.startsWith(dictWord)) {
-            count += 1;
-            break;
-          }
-        }
-      }
+// 前処理と辞書は探索1回につき一度だけ用意する。評価の和は整数。
+export function createScorer(prepared, options) {
+  const { letters, words } = prepared;
+  const n = letters.length;
+  const buffer = new Int8Array(n);
+  const { uni, bi, tri } = MODEL;
+  return function score(keyIdx) {
+    for (let i = 0; i < n; i++) buffer[i] = keyIdx[letters[i]];
+    let total = 0;
+    if (options.useLetter) {
+      for (let i = 0; i < n; i++) total += uni[buffer[i]];
     }
-  }
+    if (options.useNgram) {
+      for (let i = 0; i + 1 < n; i++) total += bi[buffer[i] * 26 + buffer[i + 1]];
+      for (let i = 0; i + 2 < n; i++) total += tri[buffer[i] * 676 + buffer[i + 1] * 26 + buffer[i + 2]];
+    }
+    if (options.useDict) {
+      let count = 0;
+      for (const word of words) {
+        let decoded = '';
+        for (let i = 0; i < word.length; i++) decoded += ALPHABET[keyIdx[word[i]]];
+        if (wordMatches(decoded, options.dictionary, options.usePartial)) count++;
+      }
+      total += count * options.dictWeight;
+    }
+    return total;
+  };
+}
 
-  return count * weight;
+export function scoreText(text, options) {
+  return createScorer(prepareText(text), options)(Int8Array.from({ length: 26 }, (_, i) => i));
+}
+
+export function scoreBreakdown(text, options) {
+  const base = { ...options, useLetter: false, useNgram: false, useDict: false };
+  return {
+    letter: scoreText(text, { ...base, useLetter: true }),
+    ngram: scoreText(text, { ...base, useNgram: true }),
+    dict: scoreText(text, { ...base, useDict: true }),
+  };
 }

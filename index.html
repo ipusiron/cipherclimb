@@ -2,18 +2,20 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';" />
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <script src="theme-init.js"></script>
     <title>サイファー・クライム（Cipher Climb）</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <link rel="stylesheet" href="style.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="englishWords_google10000.js"></script>
-    <script src="bigramScores.js"></script>
-    <script src="trigramScores.js"></script>
+    <script src="vendor/chartjs/chart.umd.min.js" defer></script>
   </head>
   <body>
+    <noscript>このツールを使うには、ブラウザーのJavaScriptを有効にしてください。</noscript>
     <div class="header-buttons">
-      <button id="helpButton" onclick="showHelp()">❔ ヘルプ</button>
+      <button id="helpButton" aria-haspopup="dialog">❔ ヘルプ</button>
       <button id="toggleTheme">🌙 ダークモード</button>
     </div>
 
@@ -23,13 +25,11 @@
       <strong>単一換字式暗号</strong> の解読専用です（ヴィジュネルなど非対応）。
     </p>
 
-    <div class="container">
+    <main class="container">
       <section class="card">
         <h2>🔐 暗号文の入力</h2>
-        <textarea id="cipherText" rows="6">
-VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRITYR RSFPVRF ZI HDRAY JYRTHPY VAHD JRYHTAS ESTBARSTZBR YAODHX HDTH TUPSO HDRXRTYR BAQR BAZRYHI TSF HDR LEYXEAH PQ DTLLASRXX HDTH HP XRJEYR HDRXR YAODHX OPKRYSURSHX TYR ASXHAHEHRF TUPSO URS FRYAKASO HDRAY CEXH LPVRYX QYPU HDR JPSXRSH PQ HDR OPKRYSRF HDTH VDRSRKRY TSI QPYU PQ OPKRYSURSH ZRJPURX FRXHYEJHAKR PQ HDRXR RSFX AH AX HDR YAODH PQ HDR LRPLBR HP TBHRY PY HP TZPBAXD AH TSF HP ASXHAHEHR SRV OPKRYSURSH BTIASO AHX QPESFTHAPS PS XEJD LYASJALBRX TSF PYOTSAWASO AHX LPVRYX AS XEJD QPYU TX HP HDRU XDTBB XRRU UPXH BANRBI HP RQQRJH HDRAY XTQRHI TSF DTLLASRXX
-	</textarea
-        >
+        <label for="cipherText">暗号文（10,000文字まで）</label>
+        <textarea id="cipherText" rows="6"></textarea>
 
         <h3>🔒 固定鍵マッピング</h3>
         <small
@@ -38,793 +38,24 @@ VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRI
         <button
           class="fixed-key-button"
           type="button"
-          onclick="setSampleFixedKey()"
+          id="sampleFixedButton"
         >
           🔒 サンプルの固定鍵をセット
         </button>
         <br />
-        <div class="fixed-key-ui">
-          <div class="row">
-            <span>A</span><span>B</span><span>C</span><span>D</span
-            ><span>E</span><span>F</span><span>G</span><span>H</span
-            ><span>I</span><span>J</span><span>K</span><span>L</span
-            ><span>M</span>
-          </div>
-          <div class="row">
-            <select id="fixed_A">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_B">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_C">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_D">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_E">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_F">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_G">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_H">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_I">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_J">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_K">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_L">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_M">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-          </div>
+        <button id="clearFixedButton" type="button">固定鍵をクリア</button>
+        <div id="fixedKeyGrid" class="fixed-key-ui"></div>
+        <div id="fixedKeyMessage" class="message info" aria-live="polite"></div>
 
-          <div class="row">
-            <span>N</span><span>O</span><span>P</span><span>Q</span
-            ><span>R</span><span>S</span><span>T</span><span>U</span
-            ><span>V</span><span>W</span><span>X</span><span>Y</span
-            ><span>Z</span>
-          </div>
-          <div class="row">
-            <select id="fixed_N">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_O">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_P">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_Q">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_R">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_S">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_T">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_U">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_V">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_W">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_X">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_Y">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-            <select id="fixed_Z">
-              <option value="">?</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
-              <option value="F">F</option>
-              <option value="G">G</option>
-              <option value="H">H</option>
-              <option value="I">I</option>
-              <option value="J">J</option>
-              <option value="K">K</option>
-              <option value="L">L</option>
-              <option value="M">M</option>
-              <option value="N">N</option>
-              <option value="O">O</option>
-              <option value="P">P</option>
-              <option value="Q">Q</option>
-              <option value="R">R</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="U">U</option>
-              <option value="V">V</option>
-              <option value="W">W</option>
-              <option value="X">X</option>
-              <option value="Y">Y</option>
-              <option value="Z">Z</option>
-            </select>
-          </div>
-        </div>
-        <br />
-
+        <div class="settings-grid">
+        <section>
         <h3>🧠 アルゴリズム設定</h3>
         <label
           ><input type="checkbox" id="useAnnealing" checked />
           焼きなまし法を使用</label
         >
         <div class="indented">
-          <label>焼きなまし冷却速度:</label><br />
+          <label for="coolingRateSelect">焼きなまし冷却速度:</label><br />
           <select id="coolingRateSelect" class="tall-select">
             <option value="auto" selected>自動（指数式）</option>
             <option value="0.995">0.995（やや早い）</option>
@@ -834,27 +65,32 @@ VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRI
         </div>
         <label
           ><input type="checkbox" id="enableReheat" checked />
-          スコア停滞時に温度をリセット（局所最適脱出）</label
+          不採択が500回続いたら温度をリセット（局所最適脱出）</label
         >
 
+        </section>
+        <section>
         <h3>📚 辞書設定</h3>
-        <label>使用する辞書:</label>
+        <label for="dictSource">使用する辞書:</label>
         <select id="dictSource" class="tall-select">
-          <option value="ngsl1000">NGSL 1000語（教育語彙）</option>
-          <option value="google10000">Google 10000語（頻出語彙）</option>
+          <option value="google10000" selected>Google 10000語（3文字以上の9,578語）</option>
+          <option value="basic343">基本語343語（小さい辞書）</option>
         </select>
 
+        </section>
+        <section>
         <h3>⚙️ スコア構成</h3>
         <label
           ><input type="checkbox" id="score_letter" checked /> 文字頻度</label
-        ><br />
+        >
         <label><input type="checkbox" id="score_ngram" checked /> N-gram</label
-        ><br />
+        >
         <label
           ><input type="checkbox" id="score_dict" checked /> 辞書照合
-          単語の重み</label
+          </label
         >
         <div class="indented">
+          <label for="dictWeight">単語の重み:</label>
           <select id="dictWeight" class="tall-select">
             <option value="30">30（弱め）</option>
             <option value="50">50</option>
@@ -868,23 +104,32 @@ VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRI
           単語を部分一致でも評価する</label
         >
 
+        </section>
+        </div>
+
         <div class="controls">
           <label
-            >試行回数（最大5000）:
+            >試行回数（1〜20000）:
             <input
               type="number"
               id="maxTries"
-              value="1000"
-              max="5000"
+              value="3000"
+              min="1"
+              max="20000"
+              step="1"
             /> </label
           ><br />
-          <button class="big-button" onclick="startClimb()">スタート</button>
-          <button class="big-button" onclick="cancelClimb()">停止</button>
+          <label for="seedInput">乱数のシード（空欄なら毎回ランダム）:</label>
+          <input type="number" id="seedInput" min="0" max="4294967295" step="1" />
+          <div id="runMessage" class="message" role="alert"></div>
+          <div id="runAnnounce" class="visually-hidden" role="status"></div>
+          <button class="big-button" id="startButton" type="button">スタート</button>
+          <button class="big-button" id="stopButton" type="button" disabled>停止</button>
         </div>
 
         <div class="progress-area">
           <h3>⏳ 進行状況</h3>
-          <progress id="progressBar" value="0" max="100"></progress>
+          <progress aria-label="探索の進み具合" id="progressBar" value="0" max="100"></progress>
         </div>
       </section>
 
@@ -895,36 +140,42 @@ VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRI
         <div id="statusArea" class="highlight-box">(ステータス表示)</div>
 
         <h3>📈 スコアの推移</h3>
-        <canvas id="scoreChart" height="100"></canvas>
+        <div class="chart-container">
+          <canvas id="scoreChart" role="img" aria-label="スコアの推移のグラフ"></canvas>
+        </div>
+        <p id="chartMessage" class="message warning"></p>
 
         <h3>📊 スコア</h3>
         <div id="scoreDisplay">スコア: -</div>
+        <div id="scoreBreakdown"></div>
+        <div id="runMeta" class="meta-info"></div>
 
         <h3>🔑 鍵の対応表</h3>
-        <pre id="keyTable"></pre>
+        <div id="keyTable"></div>
 
         <h3>📝 解読結果</h3>
         <div id="highlightedText" class="highlight-box"></div>
         <div id="highlightCount" class="meta-info"></div>
-        <button onclick="copyResult()">コピー</button>
+        <button id="copyButton" type="button" disabled>コピー</button>
+        <div id="copyMessage" class="message info" aria-live="polite"></div>
       </section>
-    </div>
+    </main>
 
     <footer class="app-footer">
       <div class="footer">
-        🔗 GitHubリポジトリはこちら（<a
+        🔗 GitHubリポジトリーはこちら（<a
           href="https://github.com/ipusiron/cipherclimb"
-          target="_blank"
+          target="_blank" rel="noopener noreferrer"
           >ipusiron/cipherclimb</a
         >）
       </div>
     </footer>
 
     <!-- ヘルプモーダル -->
-    <div id="helpModal" class="modal">
+    <div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
       <div class="modal-content">
-        <span class="close" onclick="hideHelp()">&times;</span>
-        <h2>❔ ヘルプ：Cipher Climbの使い方</h2>
+        <button type="button" class="close" aria-label="ヘルプを閉じる">&times;</button>
+        <h2 id="helpTitle">❔ ヘルプ：Cipher Climbの使い方</h2>
         <h3>🔎 Cipher Climbについて</h3>
         <p>
           このツールは、単一換字式暗号を焼きなまし法やヒルクライミング法で解読する教育ツールです。
@@ -934,7 +185,7 @@ VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRI
         <ul>
           <li>
             <strong>暗号文の入力</strong>: A〜Z
-            の英大文字で構成された暗号文を入力します。
+            の英字を含む暗号文を入力します。小文字は大文字として扱い、ほかの文字は残します。10,000文字までです。
           </li>
           <li>
             <strong>固定鍵マッピング</strong>:
@@ -960,35 +211,41 @@ VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRI
             解の探索にランダム性を持たせて局所最適を回避します（デフォルトON）
           </li>
           <li>
-            <strong>冷却速度</strong>: 温度の下がり方を制御します（指数式 or
-            固定）
+            <strong>冷却速度</strong>: 自動では最後の試行で温度が0.01になるように率を決めます。数値を選ぶと、その率を毎回掛けます。
           </li>
           <li>
             <strong>局所最適脱出</strong>:
-            スコアが停滞すると温度をリセットして再探索します
+            不採択が500回続いたら温度を10に戻します。
           </li>
         </ul>
+
+        <p>試行回数は1〜20000、既定値は3000です。乱数で作った別の鍵から5回再始動し、いちばん良い結果を採用します。</p>
+        <p>シードを指定すると同じ結果を再現できます。空欄なら実行ごとに種を生成します。</p>
+        <p>短い暗号文（目安は英字100字未満）は一意に決まらないことがあります。</p>
 
         <h3>📚 スコア構成</h3>
         <ul>
           <li>
-            <strong>文字頻度スコア</strong>: 英語の出現率に近いほど高スコア
+            <strong>文字頻度スコア</strong>: 1文字の対数尤度です。0に近いほど英語らしいと評価します。
           </li>
-          <li><strong>N-gramスコア</strong>: bigram + trigram を考慮</li>
+          <li><strong>N-gramスコア</strong>: 2文字と3文字の並びの対数尤度を加算します。</li>
           <li>
             <strong>辞書スコア</strong>:
-            辞書と一致する英単語数に基づく（部分一致可）
+            3文字以上の語が1語一致するごとに、重み÷100を加えます。部分一致では接頭辞も評価します。
           </li>
           <li>各スコアはチェックボックスでON/OFF可能</li>
           <li>辞書スコアには重みを設定できます（弱〜超重視）</li>
         </ul>
 
+        <p>N-gramの統計はパブリックドメインの英文学10作品（英字5,141,270字）から集計しています。サンプルの平文は含めていません。</p>
+        <p>辞書はGoogle 10000語（3文字以上の9,578語）と基本語343語から選べます。基本語の照合対象は320語です。</p>
+
         <h3>📈 可視化と結果</h3>
         <ul>
-          <li><strong>スコアの推移</strong>: 試行ごとのスコアをグラフで表示</li>
+          <li><strong>スコアの推移</strong>: 100回ごとに、この回のベストと現在のスコアを描きます。</li>
           <li><strong>鍵の対応表</strong>: Plain → Cipher の表を出力</li>
           <li>
-            <strong>単語ハイライト</strong>: 辞書に一致する単語を黄色で強調表示
+            <strong>単語ハイライト</strong>: 3文字以上で辞書に完全一致する単語を黄色で強調します。部分一致の設定には従いません。
           </li>
           <li>
             <strong>コピー機能</strong>: 解読結果をワンクリックでコピー可能
@@ -998,90 +255,20 @@ VR DPBF HDRXR HYEHDX HP ZR XRBQ RKAFRSH HDTH TBB URS TYR JYRTHRF RGETB HDTH HDRI
         <h3>🔧 その他</h3>
         <ul>
           <li>🌙 ダークモード対応</li>
-          <li>🔄 サンプル固定鍵の自動設定ボタンあり</li>
+          <li>🔄 サンプル固定鍵の自動設定と「固定鍵をクリア」での解除</li>
         </ul>
 
         <h3>🔐 デフォルトの暗号文について</h3>
         <p>
           アメリカ独立宣言の一節を以下の換字表（「平文文字→<strong>暗号文</strong>文字」の対応）で暗号化したものです。
         </p>
-        <pre style="font-size: 0.9em">
-A→T, B→Z, C→J, D→F, E→R, F→Q, G→O, H→D, I→A, J→C,
-K→N, L→B, M→U, N→S, O→P, P→L, Q→G, R→Y, S→X, T→H,
-U→E, V→K, W→V, X→M, Y→I, Z→W
-      </pre
-        >
+        <pre id="sampleKeyHelp" class="sample-help"></pre>
         <p>元の平文は以下のとおりです。</p>
-        <pre style="font-size: 0.9em">
-WE HOLD THESE TRUTHS TO BE SELF EVIDENT THAT ALL MEN ARE CREATED EQUAL THAT THEY ARE ENDOWED BY THEIR CREATOR WITH CERTAIN UNALIENABLE RIGHTS THAT AMONG THESE ARE LIFE LIBERTY AND THE PURSUIT OF HAPPINESS THAT TO SECURE THESE RIGHTS GOVERNMENTS ARE INSTITUTED AMONG MEN DERIVING THEIR JUST POWERS FROM THE CONSENT OF THE GOVERNED THAT WHENEVER ANY FORM OF GOVERNMENT BECOMES DESTRUCTIVE OF THESE ENDS IT IS THE RIGHT OF THE PEOPLE TO ALTER OR TO ABOLISH IT AND TO INSTITUTE NEW GOVERNMENT LAYING ITS FOUNDATION ON SUCH PRINCIPLES AND ORGANIZING ITS POWERS IN SUCH FORM AS TO THEM SHALL SEEM MOST LIKELY TO EFFECT THEIR SAFETY AND HAPPINESS
-      </pre
-        >
+        <pre id="samplePlainHelp" class="sample-help"></pre>
       </div>
     </div>
 
     <!-- モジュール読み込み -->
     <script type="module" src="main.js"></script>
-    <script type="module">
-      function applyTheme() {
-        const mode = localStorage.getItem('theme');
-        const body = document.body;
-        const btn = document.getElementById('toggleTheme');
-        if (mode === 'dark') {
-          body.classList.add('dark-mode');
-          btn.textContent = '☀️ ライトモード';
-        } else {
-          body.classList.remove('dark-mode');
-          btn.textContent = '🌙 ダークモード';
-        }
-      }
-
-      document.addEventListener('DOMContentLoaded', () => {
-        document
-          .getElementById('dictSource')
-          .addEventListener('change', (e) => {
-            const src = {
-              1000: 'englishWords_google1000.js',
-              5000: 'englishWords_google5000.js',
-              10000: 'englishWords_google10000_true.js',
-            }[e.target.value];
-
-            if (src) {
-              document
-                .querySelectorAll("script[src*='englishWords_']")
-                .forEach((s) => s.remove());
-              const script = document.createElement('script');
-              script.src = src;
-              document.body.appendChild(script);
-              alert(
-                `辞書を ${e.target.value} 語に切り替えました（次の解読から有効）`
-              );
-            }
-          });
-
-        const annealingCheckbox = document.getElementById('useAnnealing');
-        annealingCheckbox.addEventListener('change', (e) => {
-          const enableReheat = document.getElementById('enableReheat');
-          const coolingRate = document.getElementById('coolingRateSelect');
-
-          if (e.target.checked) {
-            enableReheat.disabled = false;
-            coolingRate.disabled = false;
-          } else {
-            enableReheat.disabled = true;
-            coolingRate.disabled = true;
-          }
-        });
-
-        // 初期状態に反映
-        annealingCheckbox.dispatchEvent(new Event('change'));
-
-        applyTheme();
-        document.getElementById('toggleTheme').addEventListener('click', () => {
-          const isDark = document.body.classList.toggle('dark-mode');
-          localStorage.setItem('theme', isDark ? 'dark' : 'light');
-          applyTheme();
-        });
-      });
-    </script>
   </body>
 </html>
