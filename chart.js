@@ -1,4 +1,7 @@
 let scoreChart = null;
+let unavailable = false;
+
+const t = (key) => window.I18n.t(key);
 
 function chartColors() {
   const style = getComputedStyle(document.documentElement);
@@ -11,10 +14,12 @@ export function initChart() {
   const message = document.getElementById('chartMessage');
   if (scoreChart) scoreChart.destroy();
   scoreChart = null;
+  unavailable = false;
   message.textContent = '';
   canvas.hidden = false;
   if (!window.Chart) {
-    message.textContent = 'グラフを表示できません';
+    unavailable = true;
+    message.textContent = t('chart.unavailable');
     canvas.hidden = true;
     return;
   }
@@ -23,8 +28,14 @@ export function initChart() {
     type: 'line',
     data: {
       datasets: [
-        { label: 'この回のベスト', data: [], borderColor: colors.best, pointRadius: 0, borderWidth: 2 },
-        { label: '現在のスコア', data: [], borderColor: colors.current, pointRadius: 0, borderWidth: 1 },
+        {
+          label: t('chart.restartBest'), data: [],
+          borderColor: colors.best, pointRadius: 0, borderWidth: 2,
+        },
+        {
+          label: t('chart.current'), data: [],
+          borderColor: colors.current, pointRadius: 0, borderWidth: 1,
+        },
       ],
     },
     options: {
@@ -34,11 +45,11 @@ export function initChart() {
       plugins: { legend: { labels: { color: colors.text } } },
       scales: {
         x: {
-          type: 'linear', title: { display: true, text: '試行回数（通算）', color: colors.text },
+          type: 'linear', title: { display: true, text: t('chart.xAxis'), color: colors.text },
           ticks: { color: colors.text }, grid: { color: colors.grid },
         },
         y: {
-          title: { display: true, text: 'スコア', color: colors.text },
+          title: { display: true, text: t('chart.yAxis'), color: colors.text },
           ticks: { color: colors.text }, grid: { color: colors.grid },
         },
       },
@@ -66,5 +77,17 @@ export function refreshChartTheme() {
     scoreChart.options.scales[axis].ticks.color = colors.text;
     scoreChart.options.scales[axis].grid.color = colors.grid;
   }
+  scoreChart.update('none');
+}
+
+// 描き終えたグラフも、凡例と軸の文言だけ訳し直す。データ点には触れない。
+export function refreshChartLanguage() {
+  const message = document.getElementById('chartMessage');
+  if (message && unavailable) message.textContent = t('chart.unavailable');
+  if (!scoreChart) return;
+  scoreChart.data.datasets[0].label = t('chart.restartBest');
+  scoreChart.data.datasets[1].label = t('chart.current');
+  scoreChart.options.scales.x.title.text = t('chart.xAxis');
+  scoreChart.options.scales.y.title.text = t('chart.yAxis');
   scoreChart.update('none');
 }

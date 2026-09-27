@@ -16,10 +16,12 @@ test('strict local CSP and safe HTML attributes', () => {
   assert.match(html, /<noscript>.+<\/noscript>/);
   assert.doesNotMatch(html, /\s(?:on\w+|style)\s*=/i);
   const scripts = [...html.matchAll(/<script\b([^>]*)>/g)];
-  assert.equal(scripts.length, 3);
+  assert.equal(scripts.length, 4);
   for (const [, attributes] of scripts) assert.doesNotMatch(attributes, /src="(?:https?:|\/\/)/);
   assert.match(html, /<script type="module" src="main.js"><\/script>/);
   assert.match(html.split('</head>')[0], /<script src="theme-init.js"><\/script>/);
+  assert.match(html.split('</head>')[0], /<script src="i18n.js"><\/script>/);
+  assert.ok(html.indexOf('src="i18n.js"') < html.indexOf('src="main.js"'));
   assert.ok(html.indexOf('vendor/chartjs/chart.umd.min.js') < html.indexOf('src="main.js"'));
   for (const [tag] of html.matchAll(/<a\b[^>]*target="_blank"[^>]*>/g)) {
     assert.match(tag, /rel="noopener noreferrer"/);
@@ -34,7 +36,8 @@ test('controls, labels, dialog and live announcements match the UI contract', ()
     'score_dict', 'dictWeight', 'usePartialMatch', 'maxTries', 'seedInput', 'startButton', 'stopButton',
     'progressBar', 'runMessage', 'runAnnounce', 'runMeta', 'statusArea', 'scoreChart', 'scoreDisplay',
     'scoreBreakdown', 'keyTable', 'highlightedText', 'highlightCount', 'copyButton', 'copyMessage',
-    'helpButton', 'toggleTheme', 'helpModal', 'helpTitle',
+    'helpButton', 'toggleTheme', 'langToggle', 'helpModal', 'helpTitle',
+    'cipherTextLabel', 'maxTriesLabel', 'reheatLabel',
   ];
   for (const id of ids) assert.ok(tagById(id), id);
   const allIds = [...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]);

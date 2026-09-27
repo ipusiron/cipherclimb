@@ -5,6 +5,7 @@ export const SHORT_TEXT_LETTERS = 100;
 export const MIN_WORD_LENGTH = 3;
 export const DEFAULT_MAX_TRIES = 3000;
 export const MAX_TRIES_LIMIT = 20000;
+export const MAX_SEED = 4294967295;
 
 export function letterIndex(ch) {
   const code = ch.codePointAt(0);
@@ -84,7 +85,7 @@ export function parseSeed(raw) {
   const text = String(raw ?? '').trim();
   if (text === '') return { ok: true, value: null };
   const value = Number(text);
-  const ok = Number.isInteger(value) && value >= 0 && value <= 4294967295;
+  const ok = Number.isInteger(value) && value >= 0 && value <= MAX_SEED;
   return { ok, value: ok ? value : null };
 }
 
