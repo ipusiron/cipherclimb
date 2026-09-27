@@ -8,9 +8,11 @@ vanilla JSのES moduleを使い、Chart.js 4.5.1を自己ホストしていま�
 - 純粋なモジュール: `utils.js`（前処理・検証）、`score.js`（整数スコア）、`solver.js`（探索）
 - データ: `samples.js`、`dictionaries.js`、辞書2ファイル、`ngramModel.js`
 - DOM側: `main.js`（入力・描画・イベント）、`chart.js`（グラフ）、`theme.js`（テーマ）
+- `i18n.js`: 日本語と英語の辞書とDOMへの適用。`window.I18n` を通常スクリプトとして先に読み込む
 - `theme-init.js`: 描画前の同期スクリプト。テーマの保存値を優先し、未保存時はOS設定に従う
 - `index.html`・`style.css`: 画面と配色。textareaは空にし、起動時にサンプル定数から設定
 - `test/`: 標準のnode:testとassertだけで検証
+- `README.md`・`README.en.md`: 日英のドキュメント。動作例と成功率の表は同じ値を書く
 - `tools/build-ngram-model.mjs`: 開発時の統計生成用。アプリは読み込まない
 - `vendor/chartjs/`: 配布物・ライセンス・入手元の記録
 
@@ -38,6 +40,9 @@ python -m http.server 8000
 - 自由な文字が2個未満なら探索しない。入力エラーと重複固定鍵は実行前に表示
 - 停止時は次の中間報告で全体のベストを表示。二重起動を禁止
 - READMEの動作例7行と成功率4行はテストで再計算。期待値を変更してテストを通さない
+- 画面に出す文言は `i18n.js` だけに置く。`utils.js`・`score.js`・`solver.js` には文言を持たせない
+- 状態で変わる表示（テーマのボタン、解読状況、結果、通知、固定鍵の読み上げ）に `data-i18n` を付けない。
+  状態を変数で持ち、`languagechange` で描き直す
 
 ## 安全性と保守
 
@@ -45,7 +50,7 @@ python -m http.server 8000
 - `innerHTML`・`Math.random`・デバッグ用ログを使わない
 - `ngramModel.js`と同梱配布物を手で編集・整形しない。ハッシュを検証
 - 語彙を追加・削除・並べ替えない。辞書の利用条件はコードのMITとは別
-- localStorageはテーマだけに使用し、読み書きの例外でも動作を継続
+- localStorageはテーマと表示言語だけに使用し、読み書きの例外でも動作を継続
 - strict CSPに反するインラインスクリプト・イベント属性・style属性を追加しない
 - モバイル320pxと390px、ライト・ダーク、ブラウザーのエラーと外部通信を確認
 - 旧画像`assets/screenshot.png`は保存。再撮影スクリプトはリポジトリーの外に置く

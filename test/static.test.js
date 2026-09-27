@@ -12,7 +12,7 @@ test('runtime scripts use safe rendering and isolated pure modules', () => {
     assert.doesNotMatch(source, /Math\.random|console\.log|\balert\s*\(|innerHTML|onclick\s*=/, file);
     if (/localStorage/.test(source)) storage.push(file);
   }
-  assert.deepEqual(storage.sort(), ['theme-init.js', 'theme.js']);
+  assert.deepEqual(storage.sort(), ['i18n.js', 'theme-init.js', 'theme.js']);
   for (const file of ['utils.js', 'score.js', 'solver.js', 'samples.js', 'dictionaries.js']) {
     assert.doesNotMatch(read(file), /\b(?:document|window|localStorage)\b/, file);
   }

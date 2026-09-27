@@ -41,6 +41,8 @@ hub: true
 
 # Cipher Climb - 単一換字式暗号のヒルクライミング解読ツール
 
+[English](README.en.md) · 日本語
+
 [![GitHub Stars](https://img.shields.io/github/stars/ipusiron/cipherclimb?style=social)](https://github.com/ipusiron/cipherclimb/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/ipusiron/cipherclimb?style=social)](https://github.com/ipusiron/cipherclimb/network/members)
 [![Last Commit](https://img.shields.io/github/last-commit/ipusiron/cipherclimb)](https://github.com/ipusiron/cipherclimb/commits/main)
@@ -82,6 +84,7 @@ Cipher Climb（サイファー・クライム）は、換字式暗号（代表�
 - 文字頻度・N-gram・辞書照合の切り替え、現在とベストのスコアの可視化
 - 固定鍵の指定・重複検出、辞書の切り替えと完全一致語のハイライト
 - ライト・ダークテーマ、モバイル対応、キーボードで操作できるヘルプ
+- 日本語・英語の切り替え（URLの`?lang=en`、ブラウザーの言語、保存した選択に従う）
 
 ## 📖 使い方
 
@@ -228,7 +231,7 @@ node tools/build-ngram-model.mjs <テキストを置いたフォルダー>
 
 処理はすべてブラウザー内で行い、ツールの実行時に外部への通信は発生しません。Chart.js 4.5.1はMITライセンスの配布物を`vendor/`に同梱しています。
 READMEのバッジはGitHub上の表示用であり、ツール本体は外部画像やCDNを読み込みません。
-入力をHTMLとして扱わず、DOM APIで表示します。localStorageに保存するのはテーマだけです。
+入力をHTMLとして扱わず、DOM APIで表示します。localStorageに保存するのはテーマと表示言語の選択だけです。
 探索は再現可能なシード付き疑似乱数を使います。暗号用の乱数ではありません。
 
 CSPは以下の設定です。`frame-ancestors`はmetaでは効かないため指定していません。埋め込み制限が必要な配信環境ではHTTPヘッダーで設定してください。
@@ -274,11 +277,13 @@ cipherclimb/                                     # 単一換字式暗号の解�
 ├── englishWords_basic343.js                     # 基本語343語の辞書
 ├── englishWords_google10000.js                  # 頻出語9,578語の辞書
 ├── favicon.ico                                  # サイトアイコン
+├── i18n.js                                      # 日本語と英語の文言と切り替え
 ├── index.html                                   # 画面のマークアップ
 ├── LICENSE                                      # 本ツールのMITライセンス
 ├── main.js                                      # 画面の組み立てとイベント処理
 ├── ngramModel.js                                # 英語の文字n-gram統計（自動生成・編集不可）
 ├── package.json                                 # 依存なしのnpm test定義
+├── README.en.md                                 # 英語版のドキュメント
 ├── README.md                                    # 本ドキュメント
 ├── samples.js                                   # サンプルの平文・鍵・暗号文
 ├── score.js                                     # 整数によるスコア計算
@@ -288,6 +293,7 @@ cipherclimb/                                     # 単一換字式暗号の解�
 │   ├── contrast.test.js                         # 文字色23組・非テキスト5組の検証
 │   ├── format.test.js                           # 行長と読みやすさの検証
 │   ├── html.test.js                             # CSP・ARIA・入力欄の検証
+│   ├── i18n.test.js                             # 辞書のキーと残った和文の検証
 │   ├── model.test.js                            # モデルと配布物の件数・ハッシュ検証
 │   ├── readme.test.js                           # 動作例・成功率・画像・ツリーの検証
 │   ├── samples.test.js                          # サンプルと初期値の設定方法の検証

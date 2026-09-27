@@ -1,17 +1,45 @@
 import {
   ALPHABET, decrypt, invertKey, highlightSegments, prepareText, formatScore,
   analyzeCipherText, parseMaxTries, parseSeed, findFixedConflicts,
+  MAX_CIPHER_CHARS, MAX_TRIES_LIMIT, MAX_SEED, SHORT_TEXT_LETTERS,
 } from './utils.js';
 import { scoreBreakdown } from './score.js';
-import { climb, createRng, RESTARTS } from './solver.js';
-import { initChart, addPoints } from './chart.js';
+import { climb, createRng, RESTARTS, REHEAT_AFTER } from './solver.js';
+import { initChart, addPoints, refreshChartLanguage } from './chart.js';
 import { DICTIONARIES } from './dictionaries.js';
 import { SAMPLE_CIPHER, SAMPLE_FIXED, SAMPLE_PLAIN, SAMPLE_P2C } from './samples.js';
 import { initTheme } from './theme.js';
 
 const byId = (id) => document.getElementById(id);
+const t = (key, values) => window.I18n.t(key, values);
+const MAX_CHARS_TEXT = MAX_CIPHER_CHARS.toLocaleString('en-US');
+const spacedKey = (key) => key.split('').join(' ');
 let running = false;
 let cancelRequested = false;
+
+// 画面に出ている内容は、文言ではなく状態で持つ。言語を変えたら状態から描き直す。
+let statusState = null;
+let resultState = null;
+let runMetaState = null;
+let runMessageState = null;
+let fixedMessageState = null;
+let copyMessageState = null;
+let announceState = null;
+
+// 差し込む値には生の値を入れておき、訳すのは描く直前にする。
+function renderMessage({ key, values }) {
+  const filled = { ...values };
+  if (Array.isArray(filled.plains)) filled.plains = filled.plains.join(t('fixed.conflictJoin'));
+  return t(key, filled);
+}
+
+function joinMessages(items) {
+  return items.map(renderMessage).join(t('text.messageJoin'));
+}
+
+function conflictItems(conflicts) {
+  return conflicts.map(({ cipher, plains }) => ({ key: 'fixed.conflict', values: { cipher, plains } }));
+}
 
 function getFixedMapFromUI() {
   const map = {};
@@ -34,11 +62,11 @@ function buildKeyTableFromDecryptKey(decryptKey, fixedMap = {}, cipherLettersUse
   for (let start = 0; start < 26; start += 13) {
     const table = document.createElement('table');
     table.className = 'keytable';
-    for (const [label, isCipher] of [['平文', false], ['暗号文', true]]) {
+    for (const [labelKey, isCipher] of [['key.plain', false], ['key.cipher', true]]) {
       const row = document.createElement('tr');
       const header = document.createElement('th');
       header.scope = 'row';
-      header.textContent = label;
+      header.textContent = t(labelKey);
       row.append(header);
       for (let i = start; i < start + 13; i++) {
         const cell = document.createElement('td');
@@ -57,17 +85,158 @@ function buildKeyTableFromDecryptKey(decryptKey, fixedMap = {}, cipherLettersUse
   if (unused) {
     const note = document.createElement('p');
     note.className = 'meta-info';
-    note.textContent = '薄い文字は暗号文に現れないため、対応が決まりません';
+    note.textContent = t('key.unusedNote');
     container.append(note);
   }
+}
+
+function renderConstantLabels() {
+  byId('cipherTextLabel').textContent = t('input.cipherLabel', { max: MAX_CHARS_TEXT });
+  byId('maxTriesLabel').textContent = t('run.triesLabel', { max: MAX_TRIES_LIMIT });
+  byId('reheatLabel').textContent = t('algo.reheat', { count: REHEAT_AFTER });
+}
+
+// 選択を壊さないように、格子は作り直さず読み上げ文だけ入れ替える。
+function renderFixedKeyLabels() {
+  for (const plain of ALPHABET) {
+    byId('fixed_' + plain).setAttribute('aria-label', t('fixed.cellAria', { plain }));
+  }
+}
+
+function renderFixedMessage() {
+  const node = byId('fixedKeyMessage');
+  if (!fixedMessageState) {
+    node.textContent = '';
+  } else if (fixedMessageState.kind === 'sampleNote') {
+    node.textContent = t('fixed.sampleNote');
+  } else {
+    node.textContent = joinMessages(conflictItems(fixedMessageState.conflicts));
+  }
+}
+
+function renderRunMessage() {
+  const node = byId('runMessage');
+  if (!runMessageState) {
+    node.className = 'message';
+    node.textContent = '';
+    return;
+  }
+  node.className = 'message ' + runMessageState.level;
+  node.textContent = joinMessages(runMessageState.items);
+}
+
+function renderRunMeta() {
+  byId('runMeta').textContent = runMetaState ? t('run.meta.seed', { seed: runMetaState.seed }) : '';
+}
+
+function renderAnnounce() {
+  byId('runAnnounce').textContent = announceState ? renderMessage(announceState) : '';
+}
+
+function renderCopyMessage() {
+  byId('copyMessage').textContent = copyMessageState ? t(copyMessageState.key) : '';
+}
+
+function statusText() {
+  if (!statusState) return t('status.placeholder');
+  if (statusState.kind === 'blank') return '';
+  if (statusState.kind === 'done') {
+    const { result } = statusState;
+    const note = result.searched
+      ? t('status.done', { reheats: result.reheats })
+      : t('status.doneNoSearch');
+    return [
+      note,
+      t('status.doneLine', { best: formatScore(result.bestScore), tries: result.triesDone }),
+      t('status.keyLine', { key: spacedKey(result.bestKey) }),
+    ].join('\n');
+  }
+  const { snapshot, config } = statusState;
+  const method = t(config.useAnnealing ? 'status.method.annealing' : 'status.method.climbing');
+  const temperature = config.useAnnealing
+    ? t('status.temperature', { value: formatScore(snapshot.temperature) }) : '';
+  const lines = [
+    t('status.progressLine', {
+      method, restart: snapshot.restart + 1, restarts: RESTARTS,
+      iteration: snapshot.iteration + 1, maxTries: config.maxTries, temperature,
+    }),
+    t('status.scoreLine', {
+      current: formatScore(snapshot.currentScore),
+      restartBest: formatScore(snapshot.restartBestScore),
+      best: formatScore(snapshot.bestScore),
+    }),
+    t('status.keyLine', { key: spacedKey(snapshot.bestKey) }),
+  ];
+  if (statusState.kind === 'stopped') lines.push(t('status.stopped'));
+  return lines.join('\n');
+}
+
+function renderStatus() {
+  byId('statusArea').textContent = statusText();
+}
+
+function renderResult() {
+  if (!resultState) {
+    byId('keyTable').replaceChildren();
+    byId('scoreDisplay').textContent = t('result.scoreEmpty');
+    byId('scoreBreakdown').textContent = '';
+    byId('highlightedText').replaceChildren();
+    byId('highlightCount').textContent = '';
+    byId('copyButton').disabled = true;
+    return;
+  }
+  if (resultState.kind === 'computing') {
+    byId('keyTable').textContent = t('result.keyComputing');
+    byId('scoreDisplay').textContent = t('result.scoreComputing');
+    byId('scoreBreakdown').textContent = '';
+    byId('highlightedText').textContent = t('result.decrypting');
+    byId('highlightCount').textContent = '';
+    byId('copyButton').disabled = true;
+    return;
+  }
+  const { result, config } = resultState;
+  const plainText = result.plainText ?? decrypt(config.cipherText, result.bestKey);
+  buildKeyTableFromDecryptKey(result.bestKey, config.fixedMap, prepareText(config.cipherText).cipherLettersUsed);
+  byId('scoreDisplay').textContent = t('result.score', { value: formatScore(result.bestScore) });
+  const breakdown = scoreBreakdown(plainText, config.scoring);
+  const off = (enabled) => enabled ? '' : t('result.off');
+  byId('scoreBreakdown').textContent = t('result.breakdown', {
+    letter: formatScore(breakdown.letter), letterOff: off(config.scoring.useLetter),
+    ngram: formatScore(breakdown.ngram), ngramOff: off(config.scoring.useNgram),
+    dict: formatScore(breakdown.dict), dictOff: off(config.scoring.useDict),
+  });
+  const highlighted = highlightSegments(plainText, config.scoring.dictionary);
+  const nodes = highlighted.segments.map((segment) => {
+    if (!segment.highlight) return document.createTextNode(segment.text);
+    const mark = document.createElement('mark');
+    mark.className = 'highlight-word';
+    mark.textContent = segment.text;
+    return mark;
+  });
+  byId('highlightedText').replaceChildren(...nodes);
+  byId('highlightCount').textContent = t('result.highlightCount', { count: highlighted.count });
+  byId('copyButton').disabled = false;
+}
+
+function renderAll() {
+  renderConstantLabels();
+  renderFixedKeyLabels();
+  renderFixedMessage();
+  renderRunMessage();
+  renderStatus();
+  renderResult();
+  renderRunMeta();
+  renderAnnounce();
+  renderCopyMessage();
+  refreshChartLanguage();
 }
 
 function setSampleFixedKey() {
   for (const plain of ALPHABET) byId('fixed_' + plain).value = SAMPLE_FIXED[plain] || '';
   validateFixedKeyConflicts();
   if (byId('cipherText').value.trim() !== SAMPLE_CIPHER) {
-    byId('fixedKeyMessage').textContent =
-      'サンプルの固定鍵は、サンプルの暗号文のためのものです。暗号文を変えた場合は「固定鍵をクリア」で外してください';
+    fixedMessageState = { kind: 'sampleNote' };
+    renderFixedMessage();
   }
 }
 
@@ -83,18 +252,26 @@ function readRunConfig() {
     usePartial: byId('usePartialMatch').checked,
     dictionary: DICTIONARIES[byId('dictSource').value].words,
   };
-  const conflict = conflictMessage(findFixedConflicts(fixedMap));
-  let error = conflict;
-  if (!error && !analysis.letters) error = '英字（A〜Z）を含む暗号文を入力してください';
-  if (!error && analysis.tooLong) error = `暗号文が長すぎます（${analysis.length}文字）。10,000文字以内にしてください`;
-  if (!error && !tries.ok) error = '試行回数は1〜20000の整数で入力してください';
-  if (!error && !seed.ok) error = 'シードは0〜4294967295の整数で入力するか、空欄にしてください';
-  if (!error && !scoring.useLetter && !scoring.useNgram && !scoring.useDict) error = 'スコア構成を1つ以上選んでください';
+  const conflicts = findFixedConflicts(fixedMap);
+  let error = conflicts.length ? conflictItems(conflicts) : null;
+  if (!error && !analysis.letters) error = [{ key: 'run.error.noLetters' }];
+  if (!error && analysis.tooLong) {
+    error = [{ key: 'run.error.tooLong', values: { length: analysis.length, max: MAX_CHARS_TEXT } }];
+  }
+  if (!error && !tries.ok) error = [{ key: 'run.error.tries', values: { max: MAX_TRIES_LIMIT } }];
+  if (!error && !seed.ok) error = [{ key: 'run.error.seed', values: { max: MAX_SEED } }];
+  if (!error && !scoring.useLetter && !scoring.useNgram && !scoring.useDict) {
+    error = [{ key: 'run.error.scoring' }];
+  }
   const warnings = [];
-  if (analysis.short) warnings.push(`暗号文が短い（英字${analysis.letters}字）ため、正しく解けないことがあります。目安は英字100字以上です`);
-  if (analysis.fullwidth) warnings.push(`全角の英字${analysis.fullwidth}文字は変換されません。半角に直してください`);
-  byId('runMessage').className = 'message ' + (error ? 'error' : 'warning');
-  byId('runMessage').textContent = error || warnings.join('／');
+  if (analysis.short) {
+    warnings.push({ key: 'run.warn.short', values: { letters: analysis.letters, minimum: SHORT_TEXT_LETTERS } });
+  }
+  if (analysis.fullwidth) {
+    warnings.push({ key: 'run.warn.fullwidth', values: { count: analysis.fullwidth } });
+  }
+  runMessageState = error ? { level: 'error', items: error } : { level: 'warning', items: warnings };
+  renderRunMessage();
   if (error) return null;
   const runSeed = seed.value ?? crypto.getRandomValues(new Uint32Array(1))[0];
   return {
@@ -102,39 +279,6 @@ function readRunConfig() {
     useAnnealing: byId('useAnnealing').checked, enableReheat: byId('enableReheat').checked,
     cooling: byId('coolingRateSelect').value,
   };
-}
-
-function showProgress(snapshot, config) {
-  const method = config.useAnnealing ? '🔥 焼きなまし法' : '⛰️ ヒルクライミング法';
-  const temperature = config.useAnnealing ? ` | 温度 ${formatScore(snapshot.temperature)}` : '';
-  byId('statusArea').textContent =
-    `${method} ${snapshot.restart + 1}/${RESTARTS} | 試行 ${snapshot.iteration + 1}/${config.maxTries}${temperature}\n`
-    + `現在のスコア: ${formatScore(snapshot.currentScore)} | この回のベスト: ${formatScore(snapshot.restartBestScore)} | `
-    + `全体のベスト: ${formatScore(snapshot.bestScore)}\n鍵: ${snapshot.bestKey.split('').join(' ')}`;
-  byId('progressBar').value = snapshot.triesDone;
-}
-
-function showResult(result, config) {
-  const plainText = result.plainText ?? decrypt(config.cipherText, result.bestKey);
-  buildKeyTableFromDecryptKey(result.bestKey, config.fixedMap, prepareText(config.cipherText).cipherLettersUsed);
-  byId('scoreDisplay').textContent = `スコア: ${formatScore(result.bestScore)}`;
-  const breakdown = scoreBreakdown(plainText, config.scoring);
-  const off = (enabled) => enabled ? '' : '（OFF）';
-  byId('scoreBreakdown').textContent =
-    `内訳: 文字頻度 ${formatScore(breakdown.letter)}${off(config.scoring.useLetter)} / `
-    + `N-gram ${formatScore(breakdown.ngram)}${off(config.scoring.useNgram)} / `
-    + `辞書 +${formatScore(breakdown.dict)}${off(config.scoring.useDict)}`;
-  const highlighted = highlightSegments(plainText, config.scoring.dictionary);
-  const nodes = highlighted.segments.map((segment) => {
-    if (!segment.highlight) return document.createTextNode(segment.text);
-    const mark = document.createElement('mark');
-    mark.className = 'highlight-word';
-    mark.textContent = segment.text;
-    return mark;
-  });
-  byId('highlightedText').replaceChildren(...nodes);
-  byId('highlightCount').textContent = `🔍 ${highlighted.count} 個の英単語がハイライトされました`;
-  byId('copyButton').disabled = false;
 }
 
 async function startClimb() {
@@ -145,20 +289,20 @@ async function startClimb() {
   cancelRequested = false;
   byId('startButton').disabled = true;
   byId('stopButton').disabled = false;
-  byId('copyButton').disabled = true;
-  byId('copyMessage').textContent = '';
+  copyMessageState = null;
+  renderCopyMessage();
   const progressBar = byId('progressBar');
   progressBar.max = RESTARTS * config.maxTries;
   progressBar.value = 0;
-  byId('statusArea').textContent = '';
-  byId('keyTable').textContent = '(鍵の計算中...)';
-  byId('scoreDisplay').textContent = 'スコア: (計算中)';
-  byId('scoreBreakdown').textContent = '';
-  byId('runMeta').textContent = `シード: ${config.runSeed}`;
-  byId('runAnnounce').textContent = '解読を開始しました';
-  byId('highlightedText').textContent = '解読中です...';
+  statusState = { kind: 'blank' };
+  renderStatus();
+  resultState = { kind: 'computing' };
+  renderResult();
+  runMetaState = { seed: config.runSeed };
+  renderRunMeta();
+  announceState = { key: 'run.announce.start' };
+  renderAnnounce();
   byId('highlightedText').classList.add('processing');
-  byId('highlightCount').textContent = '';
 
   const iterator = climb(config);
   let pointCount = 0;
@@ -168,34 +312,40 @@ async function startClimb() {
       const step = iterator.next();
       if (step.done) {
         addPoints(step.value.history.slice(pointCount));
-        showResult(step.value, config);
+        resultState = { kind: 'result', result: step.value, config };
+        renderResult();
         progressBar.value = step.value.totalTries;
-        const note = step.value.searched
-          ? `✅ 解読完了（再加熱: ${step.value.reheats}回）`
-          : '✅ 解読完了。固定鍵だけで鍵が決まるため、探索は行いませんでした';
-        byId('statusArea').textContent = note
-          + `\n全体のベスト: ${formatScore(step.value.bestScore)} | 総試行回数: ${step.value.triesDone}`
-          + `\n鍵: ${step.value.bestKey.split('').join(' ')}`;
-        byId('runAnnounce').textContent = note;
+        statusState = { kind: 'done', result: step.value, config };
+        renderStatus();
+        announceState = step.value.searched
+          ? { key: 'status.done', values: { reheats: step.value.reheats } }
+          : { key: 'status.doneNoSearch' };
+        renderAnnounce();
         break;
       }
       const snapshot = step.value;
       addPoints(snapshot.points);
       pointCount += snapshot.points.length;
-      showProgress(snapshot, config);
+      statusState = { kind: 'progress', snapshot, config };
+      renderStatus();
+      progressBar.value = snapshot.triesDone;
       if (cancelRequested) {
-        showResult(snapshot, config);
-        byId('statusArea').textContent += '\n⏹ 停止しました';
-        byId('runAnnounce').textContent = '⏹ 停止しました';
+        resultState = { kind: 'result', result: snapshot, config };
+        renderResult();
+        statusState = { kind: 'stopped', snapshot, config };
+        renderStatus();
+        announceState = { key: 'status.stopped' };
+        renderAnnounce();
         iterator.return();
         break;
       }
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
   } catch {
-    byId('runMessage').className = 'message error';
-    byId('runMessage').textContent = '解読中にエラーが発生しました。設定を確認して再実行してください';
-    byId('runAnnounce').textContent = '解読中にエラーが発生しました';
+    runMessageState = { level: 'error', items: [{ key: 'run.error.runtime' }] };
+    renderRunMessage();
+    announceState = { key: 'run.announce.error' };
+    renderAnnounce();
   } finally {
     running = false;
     byId('startButton').disabled = false;
@@ -224,22 +374,19 @@ async function copyResult() {
   if (byId('copyButton').disabled) return;
   try {
     await navigator.clipboard.writeText(byId('highlightedText').textContent);
-    byId('copyMessage').textContent = '解読結果をコピーしました';
+    copyMessageState = { key: 'result.copied' };
   } catch {
-    byId('copyMessage').textContent = 'コピーできませんでした。テキストを選択してコピーしてください';
+    copyMessageState = { key: 'result.copyFailed' };
   }
-}
-
-function conflictMessage(conflicts) {
-  return conflicts.map(({ cipher, plains }) =>
-    `固定鍵に重複があります: 暗号文字 ${cipher} を ${plains.join(' と ')} に割り当てています`).join('／');
+  renderCopyMessage();
 }
 
 function validateFixedKeyConflicts() {
   const conflicts = findFixedConflicts(getFixedMapFromUI());
   const duplicate = new Set(conflicts.flatMap(({ plains }) => plains));
   for (const plain of ALPHABET) byId('fixed_' + plain).classList.toggle('duplicate', duplicate.has(plain));
-  byId('fixedKeyMessage').textContent = conflictMessage(conflicts);
+  fixedMessageState = conflicts.length ? { kind: 'conflicts', conflicts } : null;
+  renderFixedMessage();
 }
 
 function createFixedKeyGrid() {
@@ -250,7 +397,6 @@ function createFixedKeyGrid() {
     caption.textContent = plain;
     const select = document.createElement('select');
     select.id = 'fixed_' + plain;
-    select.setAttribute('aria-label', `平文${plain}に対応する暗号文字`);
     for (const value of ['', ...ALPHABET]) {
       const option = document.createElement('option');
       option.value = value;
@@ -263,6 +409,7 @@ function createFixedKeyGrid() {
 }
 
 function init() {
+  window.I18n.init();
   byId('cipherText').value = SAMPLE_CIPHER;
   byId('samplePlainHelp').textContent = SAMPLE_PLAIN;
   byId('sampleKeyHelp').textContent = [...ALPHABET].map((plain, i) => plain + '→' + SAMPLE_P2C[i]).join(', ');
@@ -278,6 +425,9 @@ function init() {
   byId('stopButton').addEventListener('click', cancelClimb);
   byId('copyButton').addEventListener('click', copyResult);
   byId('helpButton').addEventListener('click', showHelp);
+  byId('langToggle').addEventListener('click',
+    () => window.I18n.setLanguage(window.I18n.language === 'ja' ? 'en' : 'ja'));
+  document.addEventListener('languagechange', renderAll);
   byId('helpModal').querySelector('.close').addEventListener('click', hideHelp);
   byId('helpModal').addEventListener('click', (event) => {
     if (event.target === byId('helpModal')) hideHelp();
@@ -303,6 +453,7 @@ function init() {
   };
   byId('useAnnealing').addEventListener('change', updateAnnealing);
   updateAnnealing();
+  renderAll();
 }
 
 init();

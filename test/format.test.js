@@ -14,6 +14,7 @@ test('source remains readable, including model and dictionaries', () => {
   }
   for (const [file, minimum] of Object.entries({
     'main.js': 250, 'style.css': 300, 'index.html': 200, 'solver.js': 130, 'utils.js': 100, 'score.js': 70,
+    'i18n.js': 300,
   })) {
     assert.ok(readFileSync(new URL(file, root), 'utf8').split('\n').length >= minimum, file);
   }
