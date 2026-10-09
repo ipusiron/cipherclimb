@@ -207,6 +207,20 @@ The MIT license of this repository does not extend to that word list.
 - [*Practical Guide to Cryptanalysis* (Japanese)](https://akademeia.info/?page_id=39995)
     - Chapter 16: Breaking ciphers with hill climbing, pp. 367-401
 
+## 🎯 Use cases
+
+### Ways of using this tool in particular
+
+- Confirming that it searches for the answer by scoring how English the text is (statistics and cryptanalysis classes): the tool scores how English a text is. The sample plaintext scores -351903, and the same text scrambled into ciphertext scores -605022, so the plaintext is higher (closer to 0). Hill climbing changes the letter mapping little by little toward a higher score, and you can confirm that it searches for the mapping with the highest score, the correct decryption
+- Confirming that the score is the sum of three clues (feature classes): the score is the sum of three things, how common each single letter is, how common a run of a few letters (an n-gram) is, and how many dictionary words match. For the sample plaintext, letters give -65608, n-grams -294295 and the dictionary 8000. You can confirm, from the breakdown, that it measures how English a text is by adding several clues, not just one
+- Confirming that the dictionary settings change the score (parameter classes): the dictionary score changes with the dictionary and the weight. For the sample plaintext it is 8000 by default, 4300 with a smaller dictionary (basic343), 8700 when partial matches are allowed and 16000 when the weight is doubled. You can confirm with numbers that changing the scoring settings changes the result
+
+### General uses
+
+- Learn the cryptanalysis of a simple substitution cipher as a subject for hill climbing and simulated annealing
+- Make a first guess at a short classical ciphertext in a CTF
+- Use it as material to explain how statistical cryptanalysis works (maximizing how English the text is)
+
 ## 🔒 Security and privacy
 
 Everything runs inside the browser, and the tool makes no network request while it works.
