@@ -122,3 +122,22 @@ test('directory tree documents every actual directory and file, with aligned des
   walk();
   assert.deepEqual(documented.sort(), actual.sort(), 'README directory tree is out of date');
 });
+
+test('ユースケースの「このツールならではの使い方」の点数を score.js で再計算（日英）', async () => {
+  const { scoreText, scoreBreakdown } = await import('../score.js');
+  const { SAMPLE_PLAIN: UCP, SAMPLE_CIPHER: UCC } = await import('../samples.js');
+  const { scoring: ucScoring } = await import('./support.js');
+  const { DICTIONARIES: UCD } = await import('../dictionaries.js');
+  const en = read('README.en.md');
+  assert.equal(scoreText(UCP, ucScoring), -351903);
+  assert.equal(scoreText(UCC, ucScoring), -605022);
+  assert.ok(scoreText(UCP, ucScoring) > scoreText(UCC, ucScoring));
+  assert.deepEqual(scoreBreakdown(UCP, ucScoring), { letter: -65608, ngram: -294295, dict: 8000 });
+  assert.equal(scoreBreakdown(UCP, { ...ucScoring, dictionary: UCD.basic343.words }).dict, 4300);
+  assert.equal(scoreBreakdown(UCP, { ...ucScoring, usePartial: true }).dict, 8700);
+  assert.equal(scoreBreakdown(UCP, { ...ucScoring, dictWeight: 200 }).dict, 16000);
+  for (const md of [read('README.md'), en]) {
+    assert.ok(md.includes('-351903') && md.includes('-605022'));
+    assert.ok(md.includes('8000') && md.includes('4300') && md.includes('16000'));
+  }
+});
