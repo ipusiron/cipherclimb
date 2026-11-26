@@ -20,7 +20,7 @@ category_en:
   - Cryptanalysis
   - Substitution Cipher
 
-difficulty: 4
+difficulty: 3
 
 tags:
   - cipher
